@@ -34,6 +34,11 @@ class LaunchpadChat extends Component
 
         $this->input = '';
 
+        // If Phase 1 is complete, transition to Phase 2 on next user message
+        if ($this->task->phase_1_complete && $this->task->phase === 1) {
+            $this->task->update(['phase' => 2]);
+        }
+
         // Store the user's message
         $this->task->messages()->create([
             'role' => 'user',
@@ -63,12 +68,28 @@ class LaunchpadChat extends Component
             );
         }
 
+        // Detect and handle instruction sheet marker
+        $isInstructionSheet = $this->detectInstructionSheet($fullResponse);
+        if ($isInstructionSheet) {
+            $fullResponse = $this->stripInstructionSheetMarker($fullResponse);
+        }
+
         // Store the complete response
         $this->task->messages()->create([
             'role' => 'assistant',
             'content' => $fullResponse,
             'phase' => $this->task->phase,
+            'is_instruction_sheet' => $isInstructionSheet,
         ]);
+
+        // Handle phase transitions when instruction sheet is detected
+        if ($isInstructionSheet) {
+            if (! $this->task->phase_1_complete) {
+                $this->task->update(['phase_1_complete' => true]);
+            } else {
+                $this->task->update(['phase' => 2, 'status' => 'completed']);
+            }
+        }
 
         $this->isStreaming = false;
         $this->streamedContent = '';
@@ -77,6 +98,16 @@ class LaunchpadChat extends Component
         $this->task->load('messages');
 
         $this->dispatch('response-complete');
+    }
+
+    public static function detectInstructionSheet(string $content): bool
+    {
+        return str_contains($content, '<!-- INSTRUCTION_SHEET -->');
+    }
+
+    public static function stripInstructionSheetMarker(string $content): string
+    {
+        return trim(str_replace('<!-- INSTRUCTION_SHEET -->', '', $content));
     }
 
     public function render()

@@ -15,10 +15,15 @@
     style="display: flex; flex-direction: column; height: 100vh; max-width: 800px; margin: 0 auto; background: var(--off-white);"
 >
     {{-- Header --}}
-    <div style="padding: 16px 20px; border-bottom: 1px solid var(--soft-sage); background: white;">
+    <div style="padding: 16px 20px; border-bottom: 1px solid var(--soft-sage); background: white; display: flex; justify-content: space-between; align-items: center;">
         <h1 style="font-size: 17px; font-weight: 500; color: var(--deep-slate); line-height: 1.4;">
             AI Assistant Launchpad
         </h1>
+        <a
+            href="/launchpad/{{ $task->token }}/chat.txt"
+            download
+            style="font-size: 12px; color: var(--mid-blue); text-decoration: none; opacity: 0.7;"
+        >Download chat</a>
     </div>
 
     {{-- Messages --}}
@@ -35,11 +40,53 @@
                     {{ $message->role === 'user'
                         ? 'background: var(--deep-slate); color: white;'
                         : 'background: white; border: 1px solid var(--soft-sage); color: var(--mid-blue);' }}
+                    {{ $message->is_instruction_sheet ? 'border-left: 4px solid var(--sage-accent); background: #f8faf8;' : '' }}
                     font-size: 15px;
                     line-height: 1.7;
                 ">
                     @if ($message->role === 'assistant')
                         <div class="prose">{!! Str::markdown($message->content) !!}</div>
+
+                        @if ($message->is_instruction_sheet)
+                            <div style="display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--soft-sage);">
+                                <button
+                                    x-data="{ copied: false }"
+                                    x-on:click="
+                                        navigator.clipboard.writeText(@js($message->content));
+                                        copied = true;
+                                        setTimeout(() => copied = false, 2000);
+                                    "
+                                    x-text="copied ? 'Copied!' : 'Copy instructions'"
+                                    style="
+                                        padding: 8px 14px;
+                                        background: var(--sage-accent);
+                                        color: white;
+                                        border: none;
+                                        border-radius: 6px;
+                                        font-family: 'Inter', sans-serif;
+                                        font-size: 13px;
+                                        font-weight: 500;
+                                        cursor: pointer;
+                                    "
+                                ></button>
+                                <a
+                                    href="/launchpad/{{ $task->token }}/instructions.txt"
+                                    download
+                                    style="
+                                        padding: 8px 14px;
+                                        background: white;
+                                        color: var(--mid-blue);
+                                        border: 1px solid var(--soft-sage);
+                                        border-radius: 6px;
+                                        font-family: 'Inter', sans-serif;
+                                        font-size: 13px;
+                                        font-weight: 500;
+                                        text-decoration: none;
+                                        cursor: pointer;
+                                    "
+                                >Download</a>
+                            </div>
+                        @endif
                     @else
                         {{ $message->content }}
                     @endif

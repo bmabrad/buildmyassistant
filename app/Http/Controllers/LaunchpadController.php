@@ -47,6 +47,44 @@ class LaunchpadController extends Controller
         return view('launchpad.chat', ['task' => $task]);
     }
 
+    public function downloadInstructions(Request $request, string $token)
+    {
+        $task = $request->attributes->get('launchpad_task');
+
+        $instructionSheet = $task->messages()
+            ->where('is_instruction_sheet', true)
+            ->reorder()
+            ->latest('id')
+            ->first();
+
+        if (! $instructionSheet) {
+            abort(404);
+        }
+
+        return response($instructionSheet->content, 200, [
+            'Content-Type' => 'text/plain',
+            'Content-Disposition' => 'attachment; filename="your-assistant-instructions.txt"',
+        ]);
+    }
+
+    public function downloadChat(Request $request, string $token)
+    {
+        $task = $request->attributes->get('launchpad_task');
+
+        $messages = $task->messages()->orderBy('created_at', 'asc')->get();
+
+        $content = $messages->map(function ($message) {
+            $role = $message->role === 'user' ? 'You' : 'Guide';
+            $timestamp = $message->created_at->format('Y-m-d H:i');
+            return "[{$role}] ({$timestamp})\n{$message->content}";
+        })->implode("\n\n");
+
+        return response($content, 200, [
+            'Content-Type' => 'text/plain',
+            'Content-Disposition' => 'attachment; filename="launchpad-chat.txt"',
+        ]);
+    }
+
     private function findTaskForSession(string $sessionId): ?LaunchpadTask
     {
         // Try up to 5 times over ~5 seconds to handle the race condition
