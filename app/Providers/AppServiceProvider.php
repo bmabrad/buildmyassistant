@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\ClaudeApiService;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
 
@@ -13,6 +14,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         Cashier::ignoreRoutes();
+
+        $this->app->singleton(ClaudeApiService::class);
     }
 
     /**
