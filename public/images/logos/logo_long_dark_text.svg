@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 64" width="440" height="64">
+  <!-- Rounded dark background mark -->
+  <rect x="0" y="0" width="64" height="64" rx="13" fill="#1E2A38"/>
+  <!-- Three sage bars -->
+  <rect x="13" y="17" width="38" height="7" rx="2.5" fill="#7AA08A"/>
+  <rect x="13" y="29" width="28" height="7" rx="2.5" fill="#7AA08A" opacity="0.7"/>
+  <rect x="13" y="41" width="19" height="7" rx="2.5" fill="#7AA08A" opacity="0.45"/>
+
+  <!-- Wordmark - deep slate text -->
+  <text x="80" y="40" font-family="Inter, Arial, Helvetica, sans-serif" font-size="28" font-weight="500" letter-spacing="-0.56">
+    <tspan fill="#1E2A38">Build My Assistant</tspan><tspan fill="#7AA08A">.co</tspan>
+  </text>
+</svg>
