@@ -63,6 +63,7 @@ Route::get('/launchpad/success', [LaunchpadController::class, 'success'])->name(
 Route::middleware(ValidateLaunchpadToken::class)->group(function () {
     Route::get('/launchpad/{token}', [LaunchpadController::class, 'chat'])->name('launchpad.chat');
     Route::get('/launchpad/{token}/instructions.txt', [LaunchpadController::class, 'downloadInstructions'])->name('launchpad.instructions');
+    Route::get('/launchpad/{token}/instructions.pdf', [LaunchpadController::class, 'downloadInstructionsPdf'])->name('launchpad.instructions.pdf');
     Route::get('/launchpad/{token}/chat.txt', [LaunchpadController::class, 'downloadChat'])->name('launchpad.chat.download');
 });
 

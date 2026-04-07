@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PostPurchaseMail;
 use App\Models\Assistant;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Laravel\Cashier\Http\Controllers\WebhookController;
+use Stripe\StripeClient;
 use Symfony\Component\HttpFoundation\Response;
 
 class StripeWebhookController extends WebhookController
@@ -37,19 +40,46 @@ class StripeWebhookController extends WebhookController
                 ]);
             }
 
-            // Set or update Stripe customer ID
+            // Set or update Stripe customer ID and sync default payment method
             if ($stripeCustomerId && $user->stripe_id !== $stripeCustomerId) {
                 $user->stripe_id = $stripeCustomerId;
                 $user->save();
+            }
+
+            if ($stripeCustomerId && ! $user->hasDefaultPaymentMethod()) {
+                try {
+                    $paymentMethods = $user->paymentMethods();
+                    if ($paymentMethods->isNotEmpty()) {
+                        $user->updateDefaultPaymentMethod($paymentMethods->first()->id);
+                    }
+                } catch (\Exception $e) {
+                    // Non-critical — user can still pay via Checkout
+                    report($e);
+                }
+            }
+        }
+
+        // Retrieve the hosted invoice URL if an invoice was created
+        $invoiceUrl = null;
+        $invoiceId = $session['invoice'] ?? null;
+        if ($invoiceId) {
+            try {
+                $stripe = new StripeClient(config('cashier.secret') ?? env('STRIPE_SECRET'));
+                $invoice = $stripe->invoices->retrieve($invoiceId);
+                $invoiceUrl = $invoice->hosted_invoice_url;
+            } catch (\Exception $e) {
+                // Log but don't block task creation
+                report($e);
             }
         }
 
         // Idempotency: skip task creation if already exists for this payment
         if (! Assistant::where('stripe_payment_id', $paymentId)->exists()) {
-            Assistant::create([
+            $task = Assistant::create([
                 'token' => (string) Str::uuid(),
                 'stripe_payment_id' => $paymentId,
                 'stripe_customer_id' => $stripeCustomerId,
+                'stripe_invoice_url' => $invoiceUrl,
                 'name' => $name,
                 'email' => $email,
                 'status' => 'pending',
@@ -57,6 +87,10 @@ class StripeWebhookController extends WebhookController
                 'phase_1_complete' => false,
                 'user_id' => $user?->id,
             ]);
+
+            if ($email !== 'unknown@example.com') {
+                Mail::to($email)->send(new PostPurchaseMail($task));
+            }
         }
 
         return $this->successMethod();

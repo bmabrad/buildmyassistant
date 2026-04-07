@@ -138,9 +138,11 @@ class ClaudeApiService
             return '';
         }
 
+        $exchangeCount = $task->chats()->count();
+
         return str_replace(
-            ['{{BUYER_NAME}}', '{{BUYER_EMAIL}}'],
-            [$task->name, $task->email],
+            ['{{BUYER_NAME}}', '{{BUYER_EMAIL}}', '{{EXCHANGE_COUNT}}'],
+            [$task->name, $task->email, $exchangeCount],
             $prompt
         );
     }

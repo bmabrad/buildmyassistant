@@ -1,10 +1,13 @@
 <?php
 
+use App\Mail\PostPurchaseMail;
 use App\Models\Assistant;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Cashier\Http\Middleware\VerifyWebhookSignature;
 
 beforeEach(function () {
     $this->withoutMiddleware(VerifyWebhookSignature::class);
+    Mail::fake();
 });
 
 it('creates a task from checkout.session.completed webhook', function () {
@@ -55,6 +58,45 @@ it('is idempotent for duplicate webhook events', function () {
     $this->postJson('/stripe/webhook', $payload);
 
     expect(Assistant::where('stripe_payment_id', 'cs_test_duplicate')->count())->toBe(1);
+});
+
+it('sends post-purchase email on checkout completed', function () {
+    $payload = [
+        'type' => 'checkout.session.completed',
+        'data' => [
+            'object' => [
+                'id' => 'cs_test_email_send',
+                'customer' => 'cus_test_email',
+                'customer_details' => [
+                    'name' => 'Brad Test',
+                    'email' => 'brad@example.com',
+                ],
+            ],
+        ],
+    ];
+
+    $this->postJson('/stripe/webhook', $payload)->assertOk();
+
+    Mail::assertQueued(PostPurchaseMail::class, function ($mail) {
+        return $mail->hasTo('brad@example.com')
+            && $mail->buyerName === 'Brad Test';
+    });
+});
+
+it('does not send post-purchase email for unknown email', function () {
+    $payload = [
+        'type' => 'checkout.session.completed',
+        'data' => [
+            'object' => [
+                'id' => 'cs_test_no_email',
+                'customer_details' => [],
+            ],
+        ],
+    ];
+
+    $this->postJson('/stripe/webhook', $payload)->assertOk();
+
+    Mail::assertNotQueued(PostPurchaseMail::class);
 });
 
 it('handles missing customer details gracefully', function () {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your AI assistant instructions are ready</title>
+    <title>Your AI Assistant Launchpad is ready to go</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #F4F6F4; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #3D5A73; font-size: 15px; line-height: 1.7;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F4F6F4;">
@@ -22,26 +22,22 @@
                     <tr>
                         <td style="padding: 32px;">
                             <p style="margin: 0 0 20px; color: #1E2A38; font-size: 17px; font-weight: 500; line-height: 1.4;">
-                                Hi {{ $buyerName }}, your instructions are ready.
+                                Thanks for your purchase, {{ $buyerName }}.
                             </p>
 
                             <p style="margin: 0 0 20px;">
-                                Your AI assistant <strong style="color: #1E2A38; font-weight: 500;">{{ $assistantName }}</strong> is built and ready to go. It handles {{ $assistantHandles }}.
-                            </p>
-
-                            <p style="margin: 0 0 12px;">
-                                You can copy or download your instructions from the chat any time.
+                                Your AI Assistant Launchpad session is ready. A guided chat will walk you through building a custom AI assistant for the process eating your time.
                             </p>
 
                             <p style="margin: 0 0 24px;">
-                                You can view all your builds at any time from your <a href="{{ url('/dashboard') }}" style="color: #7AA08A; text-decoration: underline;">dashboard</a>.
+                                You can start any time — your session won't expire.
                             </p>
 
                             {{-- CTA button --}}
                             <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
                                 <tr>
                                     <td style="background-color: #7AA08A; border-radius: 6px;">
-                                        <a href="{{ $chatUrl }}" style="display: inline-block; padding: 12px 28px; color: #ffffff; font-size: 15px; font-weight: 500; text-decoration: none; letter-spacing: 0.01em;">View your instructions</a>
+                                        <a href="{{ $chatUrl }}" style="display: inline-block; padding: 12px 28px; color: #ffffff; font-size: 15px; font-weight: 500; text-decoration: none; letter-spacing: 0.01em;">Start your session</a>
                                     </td>
                                 </tr>
                             </table>
@@ -51,6 +47,17 @@
                                 <a href="{{ $chatUrl }}" style="color: #7AA08A; text-decoration: underline; word-break: break-all;">{{ $chatUrl }}</a>
                             </p>
 
+                            @if($invoiceUrl)
+                            <p style="margin: 28px 0 8px; color: #1E2A38; font-size: 15px; font-weight: 500; line-height: 1.4;">
+                                Your invoice
+                            </p>
+                            <p style="margin: 0 0 12px; font-size: 13px; color: #3D5A73;">
+                                Click below to view or download your invoice for this purchase.
+                            </p>
+                            <p style="margin: 0;">
+                                <a href="{{ $invoiceUrl }}" style="color: #7AA08A; font-size: 13px; text-decoration: underline;">View your invoice</a>
+                            </p>
+                            @endif
                         </td>
                     </tr>
 

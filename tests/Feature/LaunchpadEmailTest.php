@@ -172,3 +172,61 @@ it('renders the email template without errors', function () use ($instructionShe
     expect($rendered)->toContain("/launchpad/{$task->token}");
     expect($rendered)->toContain('Build My Assistant');
 });
+
+it('completion email does not contain invoice link', function () use ($instructionSheetContent) {
+    $task = Assistant::factory()->completed()->create([
+        'name' => 'Brad',
+        'stripe_invoice_url' => 'https://invoice.stripe.com/i/acct_123/test_inv_456',
+    ]);
+
+    Chat::factory()->instructionSheet()->create([
+        'task_id' => $task->id,
+        'content' => $instructionSheetContent,
+    ]);
+
+    $mail = new LaunchpadCompletionMail($task);
+    $rendered = $mail->render();
+
+    expect($rendered)->not->toContain('View your invoice');
+});
+
+it('post-purchase email includes invoice link when present', function () {
+    $task = Assistant::factory()->create([
+        'name' => 'Brad',
+        'email' => 'brad@example.com',
+        'stripe_invoice_url' => 'https://invoice.stripe.com/i/acct_123/test_inv_456',
+    ]);
+
+    $mail = new \App\Mail\PostPurchaseMail($task);
+    $rendered = $mail->render();
+
+    expect($mail->buyerName)->toBe('Brad');
+    expect($mail->chatUrl)->toContain("/launchpad/{$task->token}");
+    expect($mail->invoiceUrl)->toBe('https://invoice.stripe.com/i/acct_123/test_inv_456');
+    expect($rendered)->toContain('Thanks for your purchase, Brad');
+    expect($rendered)->toContain('Start your session');
+    expect($rendered)->toContain('View your invoice');
+    expect($rendered)->toContain('https://invoice.stripe.com/i/acct_123/test_inv_456');
+});
+
+it('post-purchase email omits invoice link when not present', function () {
+    $task = Assistant::factory()->create([
+        'name' => 'Brad',
+        'stripe_invoice_url' => null,
+    ]);
+
+    $mail = new \App\Mail\PostPurchaseMail($task);
+    $rendered = $mail->render();
+
+    expect($rendered)->toContain('Thanks for your purchase, Brad');
+    expect($rendered)->not->toContain('View your invoice');
+    expect($mail->invoiceUrl)->toBeNull();
+});
+
+it('post-purchase email has correct subject line', function () {
+    $task = Assistant::factory()->create();
+
+    $mail = new \App\Mail\PostPurchaseMail($task);
+
+    expect($mail->envelope()->subject)->toBe('Your AI Assistant Launchpad is ready to go');
+});

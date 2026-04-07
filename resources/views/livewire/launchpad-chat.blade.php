@@ -18,7 +18,8 @@
     }"
     x-init="scrollToBottom(false)"
     @response-complete.window="scrollToBottom(true); $nextTick(() => $refs.messageInput?.focus())"
-    @if ($needsGreeting) wire:init="generateGreeting" @endif
+    x-effect="if ($wire.isStreaming) scrollToBottom(true)"
+    wire:init="generateGreeting"
     class="chat-page"
 >
     <div class="chat-two-col">
@@ -52,13 +53,13 @@
                                                 setTimeout(() => copied = false, 2000);
                                             "
                                             x-text="copied ? 'Copied!' : 'Copy instructions'"
-                                            class="instruction-btn instruction-btn-primary"
+                                            class="instruction-btn instruction-btn-outline"
                                         ></button>
                                         <a
-                                            href="/launchpad/{{ $task->token }}/instructions.txt"
+                                            href="/launchpad/{{ $task->token }}/instructions.pdf?message={{ $message->id }}"
                                             download
-                                            class="instruction-btn instruction-btn-outline"
-                                        >Download</a>
+                                            class="instruction-btn instruction-btn-primary"
+                                        >Download your instruction sheet</a>
                                     </div>
                                 @endif
                             @else
@@ -147,19 +148,19 @@
                 </div>
                 <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
                     <span class="sidebar-step-num">2</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Answer questions about the process so the guide understands it inside and out</p>
+                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Watch your guide map out the full process</p>
                 </div>
                 <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
                     <span class="sidebar-step-num">3</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Receive your instruction sheet with a system prompt ready to paste</p>
+                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Review your assistant design and confirm the approach</p>
                 </div>
                 <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
                     <span class="sidebar-step-num">4</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Optionally go deeper with more detailed configuration</p>
+                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Download your instruction sheet with everything ready to go</p>
                 </div>
                 <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
                     <span class="sidebar-step-num">5</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Copy or download your instructions and set up your assistant</p>
+                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Launch your assistant</p>
                 </div>
             </div>
 

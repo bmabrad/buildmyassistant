@@ -85,8 +85,11 @@ class DashboardController extends Controller
             $user->charge(500, $user->defaultPaymentMethod()->id, [
                 'currency' => 'aud',
                 'description' => 'AI Assistant Launchpad — Build My Assistant',
+                'return_url' => route('dashboard'),
             ]);
         } catch (\Exception $e) {
+            report($e);
+
             return back()->withErrors(['charge' => 'Payment failed. You can try again or use a new card.'])
                 ->with('show_fallback', true);
         }
@@ -102,6 +105,8 @@ class DashboardController extends Controller
             'phase_1_complete' => false,
             'user_id' => $user->id,
         ]);
+
+        \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\PostPurchaseMail($task));
 
         return redirect()->route('launchpad.chat', $task->token);
     }

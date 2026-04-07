@@ -19,6 +19,7 @@ class Assistant extends Model
         'token',
         'stripe_payment_id',
         'stripe_customer_id',
+        'stripe_invoice_url',
         'name',
         'email',
         'status',

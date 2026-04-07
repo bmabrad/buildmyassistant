@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assistant;
+use App\Services\InstructionSheetPdfService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Cashier\Checkout;
 
 class LaunchpadController extends Controller
@@ -32,6 +34,9 @@ class LaunchpadController extends Controller
             'payment_intent_data' => [
                 'setup_future_usage' => 'off_session',
             ],
+            'invoice_creation' => [
+                'enabled' => true,
+            ],
         ];
 
         if ($user = auth()->user()) {
@@ -54,6 +59,11 @@ class LaunchpadController extends Controller
         if (! $task) {
             return redirect()->route('launchpad')
                 ->with('error', 'We could not find your session. Please contact support.');
+        }
+
+        // Auto-login the user on first purchase
+        if (! Auth::check() && $task->user_id) {
+            Auth::loginUsingId($task->user_id);
         }
 
         return redirect()->route('launchpad.chat', $task->token);
@@ -84,6 +94,37 @@ class LaunchpadController extends Controller
             'Content-Type' => 'text/plain',
             'Content-Disposition' => 'attachment; filename="your-assistant-instructions.txt"',
         ]);
+    }
+
+    public function downloadInstructionsPdf(Request $request, string $token)
+    {
+        $task = $request->attributes->get('launchpad_task');
+
+        // Support downloading a specific instruction sheet by message ID
+        $messageId = $request->query('message');
+
+        if ($messageId) {
+            $instructionSheet = $task->chats()
+                ->where('id', $messageId)
+                ->where('is_instruction_sheet', true)
+                ->first();
+        } else {
+            $instructionSheet = $task->chats()
+                ->where('is_instruction_sheet', true)
+                ->reorder()
+                ->latest('id')
+                ->first();
+        }
+
+        if (! $instructionSheet) {
+            abort(404);
+        }
+
+        $pdfService = app(InstructionSheetPdfService::class);
+        $pdf = $pdfService->generate($task, $instructionSheet->content);
+        $filename = $pdfService->filename($task);
+
+        return $pdf->download($filename);
     }
 
     public function downloadChat(Request $request, string $token)
