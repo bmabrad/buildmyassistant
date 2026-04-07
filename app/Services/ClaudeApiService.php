@@ -131,7 +131,7 @@ class ClaudeApiService
 
     public function getSystemPrompt(Assistant $task): string
     {
-        $prompt = Storage::disk('local')->get('launchpad/system_prompt.md');
+        $prompt = file_get_contents(resource_path('prompts/system_prompt.md'));
 
         if (! $prompt) {
             Log::error('System prompt file not found');
