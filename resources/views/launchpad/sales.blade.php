@@ -7,10 +7,14 @@
             <h1 class="text-4xl font-medium text-white leading-tight mb-4">Your custom AI assistant, built in a single session</h1>
             <p class="text-soft-sage text-base max-w-[540px] mx-auto mb-8">A guided chat that helps you automate the process eating your time. Walk away with a complete instruction sheet and a system prompt ready to paste. $5 AUD.</p>
             <p class="text-3xl font-medium text-sage mb-6">$5 AUD</p>
-            <form action="{{ route('launchpad.checkout') }}" method="POST">
-                @csrf
-                <button type="submit" class="px-8 py-3 bg-sage text-white rounded-md text-sm font-medium cursor-pointer hover:bg-sage-dark">Build my assistant — $5</button>
-            </form>
+            @if($canQuickBuy)
+                <a href="{{ route('dashboard.new-build') }}" class="inline-block px-8 py-3 bg-sage text-white rounded-md text-sm font-medium no-underline cursor-pointer hover:bg-sage-dark">Build my assistant — $5</a>
+            @else
+                <form action="{{ route('launchpad.checkout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-8 py-3 bg-sage text-white rounded-md text-sm font-medium cursor-pointer hover:bg-sage-dark">Build my assistant — $5</button>
+                </form>
+            @endif
         </div>
     </section>
 
@@ -103,10 +107,14 @@
             <h2 class="text-2xl font-medium text-slate leading-tight mb-4">Ready to get your time back?</h2>
             <p class="text-mid-blue mb-6">Five steps. One process. A custom assistant ready to launch.</p>
             <p class="text-3xl font-medium text-sage mb-6">$5 AUD</p>
-            <form action="{{ route('launchpad.checkout') }}" method="POST">
-                @csrf
-                <button type="submit" class="px-8 py-3 bg-sage text-white rounded-md text-sm font-medium cursor-pointer hover:bg-sage-dark">Build my assistant — $5</button>
-            </form>
+            @if($canQuickBuy)
+                <a href="{{ route('dashboard.new-build') }}" class="inline-block px-8 py-3 bg-sage text-white rounded-md text-sm font-medium no-underline cursor-pointer hover:bg-sage-dark">Build my assistant — $5</a>
+            @else
+                <form action="{{ route('launchpad.checkout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-8 py-3 bg-sage text-white rounded-md text-sm font-medium cursor-pointer hover:bg-sage-dark">Build my assistant — $5</button>
+                </form>
+            @endif
         </div>
     </section>
 

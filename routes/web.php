@@ -5,6 +5,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\LaunchpadController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Middleware\Impersonating;
 use App\Http\Middleware\ValidateLaunchpadToken;
@@ -82,6 +83,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/billing', [DashboardController::class, 'billing'])->name('dashboard.billing');
     Route::get('/dashboard/new-build', [DashboardController::class, 'newBuild'])->name('dashboard.new-build');
     Route::post('/dashboard/new-build', [DashboardController::class, 'chargeNewBuild']);
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::get('/settings/verify-email/{user}', [SettingsController::class, 'verifyEmail'])->name('settings.verify-email');
+    Route::post('/settings/cancel-email', [SettingsController::class, 'cancelPendingEmail'])->name('settings.cancel-email');
 });
 
 // Admin impersonation

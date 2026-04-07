@@ -25,11 +25,15 @@ class StripeWebhookController extends WebhookController
             $user = User::where('email', $email)->first();
 
             if (! $user) {
+                $parsed = self::parseName($name);
+
                 $user = User::create([
                     'name' => $name,
                     'email' => $email,
                     'password' => null,
                     'email_verified_at' => now(),
+                    'first_name' => $parsed['first_name'],
+                    'last_name' => $parsed['last_name'],
                 ]);
             }
 
@@ -56,5 +60,29 @@ class StripeWebhookController extends WebhookController
         }
 
         return $this->successMethod();
+    }
+
+    public static function parseName(string $fullName): array
+    {
+        $prefixes = ['mr', 'mrs', 'ms', 'miss', 'dr', 'prof', 'professor', 'rev', 'sir', 'dame', 'lord', 'lady'];
+
+        $parts = preg_split('/\s+/', trim($fullName));
+
+        // Strip leading prefix (with or without trailing period)
+        if (count($parts) > 1) {
+            $candidate = strtolower(rtrim($parts[0], '.'));
+            if (in_array($candidate, $prefixes, true)) {
+                array_shift($parts);
+            }
+        }
+
+        if (count($parts) <= 1) {
+            return ['first_name' => $parts[0] ?? $fullName, 'last_name' => null];
+        }
+
+        $firstName = array_shift($parts);
+        $lastName = implode(' ', $parts);
+
+        return ['first_name' => $firstName, 'last_name' => $lastName];
     }
 }

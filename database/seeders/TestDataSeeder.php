@@ -7,41 +7,23 @@ use App\Models\Assistant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
-use Stripe\StripeClient;
 
 class TestDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $stripe = new StripeClient(config('cashier.secret'));
-
         // ── User 1: Karen — 3 completed builds, password set, saved payment method ──
-
-        $karenCustomer = $stripe->customers->create([
-            'name' => 'Karen Whitfield',
-            'email' => 'karen.whitfield@outlook.com.au',
-        ]);
-
-        // Attach a test Visa card as default payment method
-        $karenPm = $stripe->paymentMethods->create([
-            'type' => 'card',
-            'card' => [
-                'token' => 'tok_visa',
-            ],
-        ]);
-        $stripe->paymentMethods->attach($karenPm->id, ['customer' => $karenCustomer->id]);
-        $stripe->customers->update($karenCustomer->id, [
-            'invoice_settings' => ['default_payment_method' => $karenPm->id],
-        ]);
 
         $karen = User::create([
             'name' => 'Karen Whitfield',
+            'first_name' => 'Karen',
+            'last_name' => 'Whitfield',
             'email' => 'karen.whitfield@outlook.com.au',
             'password' => 'password',
             'email_verified_at' => now()->subDays(14),
         ]);
         $karen->forceFill([
-            'stripe_id' => $karenCustomer->id,
+            'stripe_id' => 'cus_UI2Lynlyve0Bec',
             'pm_type' => 'visa',
             'pm_last_four' => '4242',
         ])->save();
@@ -66,19 +48,16 @@ class TestDataSeeder extends Seeder
 
         // ── User 2: David — 1 completed + 1 in-progress, no password (magic link only) ──
 
-        $davidCustomer = $stripe->customers->create([
-            'name' => 'David Nguyen',
-            'email' => 'david.nguyen@gmail.com',
-        ]);
-
         $david = User::create([
             'name' => 'David Nguyen',
+            'first_name' => 'David',
+            'last_name' => 'Nguyen',
             'email' => 'david.nguyen@gmail.com',
             'password' => null,
             'email_verified_at' => now()->subDays(5),
         ]);
         $david->forceFill([
-            'stripe_id' => $davidCustomer->id,
+            'stripe_id' => 'cus_UI2LpCf5xboCds',
             'pm_type' => null,
             'pm_last_four' => null,
         ])->save();
@@ -95,19 +74,16 @@ class TestDataSeeder extends Seeder
 
         // ── User 3: Simone — 1 in-progress only, no password, no saved payment method ──
 
-        $simoneCustomer = $stripe->customers->create([
-            'name' => 'Simone Barker',
-            'email' => 'simone.barker@bigpond.com',
-        ]);
-
         $simone = User::create([
             'name' => 'Simone Barker',
+            'first_name' => 'Simone',
+            'last_name' => 'Barker',
             'email' => 'simone.barker@bigpond.com',
             'password' => null,
             'email_verified_at' => now()->subHours(1),
         ]);
         $simone->forceFill([
-            'stripe_id' => $simoneCustomer->id,
+            'stripe_id' => 'cus_UI2L7m8638J7bB',
             'pm_type' => null,
             'pm_last_four' => null,
         ])->save();

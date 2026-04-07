@@ -21,8 +21,8 @@
 </head>
 <body class="font-sans text-[15px] font-normal leading-[1.7] text-mid-blue bg-white">
     {{-- Nav --}}
-    <nav class="bg-slate py-4">
-        <div class="max-w-[1000px] mx-auto px-6 flex items-center justify-between">
+    <nav class="max-w-[1000px] mx-auto px-6 bg-slate py-4">
+        <div class="flex items-center justify-between">
             <a href="/" class="text-lg font-medium text-white no-underline">Build My Assistant<span class="text-sage">.co</span></a>
             <button class="nav-toggle md:hidden text-white" onclick="document.getElementById('nav-links').classList.toggle('hidden')" aria-label="Toggle navigation">
                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -31,12 +31,12 @@
                 <a href="/launchpad" class="text-soft-sage text-sm no-underline hover:text-white">Start Here</a>
                 <div class="relative" x-data="{ open: false }" @click.outside="open = false">
                     <button @click="open = !open" class="text-soft-sage text-sm hover:text-white flex items-center gap-1">
-                        Company
+                        Explore
                         <svg class="w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
                     </button>
                     <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-36 bg-slate border border-soft-sage/20 rounded-md shadow-lg py-1 z-50">
                         <a href="/about" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">About</a>
-                        <a href="/blog" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Latest</a>
+                        <a href="/blog" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Articles</a>
                         <a href="/contact" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Contact</a>
                     </div>
                 </div>
@@ -49,11 +49,20 @@
                             @endphp
                             {{ $initials }}
                         </button>
-                        <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-36 bg-slate border border-soft-sage/20 rounded-md shadow-lg py-1 z-50">
+                        <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-36 bg-slate border border-soft-sage/20 rounded-md shadow-lg py-1 z-50" style="text-align: left;">
                             <a href="/dashboard" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Dashboard</a>
+                            <a href="/settings" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Settings</a>
+                            @if(session()->has('impersonating_from'))
+                                <span class="block px-4 py-2 text-soft-sage/40 text-sm cursor-not-allowed" title="Not available while impersonating">Billing</span>
+                            @else
+                                <form method="POST" action="/dashboard/billing">
+                                    @csrf
+                                    <button type="submit" class="block w-full px-4 py-2 text-soft-sage text-sm hover:text-white hover:bg-white/5" style="text-align: left;">Billing</button>
+                                </form>
+                            @endif
                             <form method="POST" action="/logout">
                                 @csrf
-                                <button type="submit" class="block w-full text-left px-4 py-2 text-soft-sage text-sm hover:text-white hover:bg-white/5">Log out</button>
+                                <button type="submit" class="block w-full px-4 py-2 text-soft-sage text-sm hover:text-white hover:bg-white/5" style="text-align: left;">Log out</button>
                             </form>
                         </div>
                     </div>

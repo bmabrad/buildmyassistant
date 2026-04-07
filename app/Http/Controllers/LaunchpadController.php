@@ -10,7 +10,17 @@ class LaunchpadController extends Controller
 {
     public function show()
     {
-        return view('launchpad.sales');
+        $canQuickBuy = false;
+
+        if ($user = auth()->user()) {
+            try {
+                $canQuickBuy = $user->hasDefaultPaymentMethod();
+            } catch (\Exception $e) {
+                // Fall through to normal checkout
+            }
+        }
+
+        return view('launchpad.sales', ['canQuickBuy' => $canQuickBuy]);
     }
 
     public function checkout()
