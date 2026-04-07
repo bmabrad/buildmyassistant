@@ -1,37 +1,37 @@
 <x-layouts.public :title="'Blog — Build My Assistant'" :description="'Tips and guides on using AI assistants in your coaching or consulting business.'">
 
-    <div class="section">
-        <div class="container">
-            <div class="section-header">
-                <h1>Blog</h1>
+    <section class="py-16">
+        <div class="max-w-[720px] mx-auto px-6">
+            <div class="text-center mb-10">
+                <h1 class="text-4xl font-medium text-slate leading-tight mb-3">Blog</h1>
                 <p>Tips and guides on using AI assistants in your coaching or consulting business.</p>
             </div>
 
             @if($posts->count())
-                <div style="display: grid; gap: 32px; max-width: 720px; margin: 0 auto;">
+                <div class="space-y-8">
                     @foreach($posts as $post)
-                        <article style="border-bottom: 1px solid var(--soft-sage); padding-bottom: 32px;">
-                            <a href="/blog/{{ $post->slug }}" style="text-decoration: none;">
-                                <h2 style="margin-bottom: 8px; color: var(--deep-slate);">{{ $post->title }}</h2>
+                        <article class="border-b border-soft-sage pb-8">
+                            <a href="/blog/{{ $post->slug }}" class="no-underline">
+                                <h2 class="text-2xl font-medium text-slate leading-tight mb-2">{{ $post->title }}</h2>
                             </a>
-                            <p style="font-size: 14px; opacity: 0.6; margin-bottom: 12px;">{{ $post->published_at->format('M j, Y') }}</p>
+                            <p class="text-sm text-mid-blue/60 mb-3">{{ $post->published_at->format('M j, Y') }}</p>
                             @if($post->excerpt)
-                                <p style="margin-bottom: 12px;">{{ $post->excerpt }}</p>
+                                <p class="mb-3">{{ $post->excerpt }}</p>
                             @endif
-                            <a href="/blog/{{ $post->slug }}" style="font-size: 15px; font-weight: 500;">Read more &rarr;</a>
+                            <a href="/blog/{{ $post->slug }}" class="text-sage font-medium text-sm">Read more &rarr;</a>
                         </article>
                     @endforeach
                 </div>
 
-                <div style="margin-top: 40px; text-align: center;">
+                <div class="mt-10 text-center">
                     {{ $posts->links() }}
                 </div>
             @else
-                <div style="text-align: center; padding: 40px 0;">
+                <div class="text-center py-10">
                     <p>No posts yet. Check back soon.</p>
                 </div>
             @endif
         </div>
-    </div>
+    </section>
 
 </x-layouts.public>

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\LaunchpadTask;
+use App\Models\Assistant;
 use Generator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -21,7 +21,7 @@ class ClaudeApiService
         $this->maxTokens = (int) env('CLAUDE_MAX_TOKENS', 4096);
     }
 
-    public function chat(LaunchpadTask $task, ?string $userMessage = null): string
+    public function chat(Assistant $task, ?string $userMessage = null): string
     {
         try {
             $response = Http::withHeaders([
@@ -58,7 +58,7 @@ class ClaudeApiService
         }
     }
 
-    public function streamChat(LaunchpadTask $task, ?string $userMessage = null): Generator
+    public function streamChat(Assistant $task, ?string $userMessage = null): Generator
     {
         try {
             $response = Http::withHeaders([
@@ -129,7 +129,7 @@ class ClaudeApiService
         }
     }
 
-    public function getSystemPrompt(LaunchpadTask $task): string
+    public function getSystemPrompt(Assistant $task): string
     {
         $prompt = Storage::disk('local')->get('launchpad/system_prompt.md');
 
@@ -145,9 +145,9 @@ class ClaudeApiService
         );
     }
 
-    public function buildMessages(LaunchpadTask $task, ?string $userMessage = null): array
+    public function buildMessages(Assistant $task, ?string $userMessage = null): array
     {
-        $messages = $task->messages()
+        $messages = $task->chats()
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(fn ($msg) => $msg->toClaudeFormat())
@@ -157,6 +157,16 @@ class ClaudeApiService
             $messages[] = [
                 'role' => 'user',
                 'content' => $userMessage,
+            ];
+        }
+
+        // Claude API requires at least one message. For the auto-greeting
+        // (first visit, no history, no user message), send a minimal prompt
+        // so the system prompt's opening message instructions take effect.
+        if (empty($messages)) {
+            $messages[] = [
+                'role' => 'user',
+                'content' => 'Hello',
             ];
         }
 

@@ -1,5 +1,5 @@
 <div class="space-y-3">
-    @foreach ($getRecord()->messages()->orderBy('created_at', 'asc')->get() as $message)
+    @foreach ($getRecord()->chats()->orderBy('created_at', 'asc')->get() as $message)
         <div class="rounded-lg p-3 {{ $message->is_instruction_sheet ? 'border-l-4 border-green-500 bg-green-50 dark:bg-green-950' : ($message->role === 'user' ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700') }}">
             <div class="flex items-center gap-2 mb-1">
                 <span class="text-xs font-semibold {{ $message->role === 'user' ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400' }}">
@@ -25,7 +25,7 @@
         </div>
     @endforeach
 
-    @if ($getRecord()->messages()->count() === 0)
+    @if ($getRecord()->chats()->count() === 0)
         <p class="text-sm text-gray-400 italic">No messages yet.</p>
     @endif
 </div>

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LaunchpadTask;
+use App\Models\Assistant;
 use Illuminate\Http\Request;
 use Laravel\Cashier\Checkout;
 
@@ -15,11 +15,20 @@ class LaunchpadController extends Controller
 
     public function checkout()
     {
-        return Checkout::guest()->create(config('services.stripe.launchpad_price_id'), [
+        $options = [
             'success_url' => route('launchpad.success') . '?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('launchpad'),
             'customer_creation' => 'always',
-        ]);
+            'payment_intent_data' => [
+                'setup_future_usage' => 'off_session',
+            ],
+        ];
+
+        if ($user = auth()->user()) {
+            $options['customer_email'] = $user->email;
+        }
+
+        return Checkout::guest()->create(config('services.stripe.launchpad_price_id'), $options);
     }
 
     public function success(Request $request)
@@ -51,7 +60,7 @@ class LaunchpadController extends Controller
     {
         $task = $request->attributes->get('launchpad_task');
 
-        $instructionSheet = $task->messages()
+        $instructionSheet = $task->chats()
             ->where('is_instruction_sheet', true)
             ->reorder()
             ->latest('id')
@@ -71,7 +80,7 @@ class LaunchpadController extends Controller
     {
         $task = $request->attributes->get('launchpad_task');
 
-        $messages = $task->messages()->orderBy('created_at', 'asc')->get();
+        $messages = $task->chats()->orderBy('created_at', 'asc')->get();
 
         $content = $messages->map(function ($message) {
             $role = $message->role === 'user' ? 'You' : 'Guide';
@@ -85,14 +94,14 @@ class LaunchpadController extends Controller
         ]);
     }
 
-    private function findTaskForSession(string $sessionId): ?LaunchpadTask
+    private function findTaskForSession(string $sessionId): ?Assistant
     {
         // Try up to 5 times over ~5 seconds to handle the race condition
         // where the buyer's redirect arrives before the webhook creates the task.
         $attempts = 5;
 
         for ($i = 0; $i < $attempts; $i++) {
-            $task = LaunchpadTask::where('stripe_payment_id', $sessionId)->first();
+            $task = Assistant::where('stripe_payment_id', $sessionId)->first();
 
             if ($task) {
                 return $task;

@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\LaunchpadMessage;
-use App\Models\LaunchpadTask;
+use App\Models\Chat;
+use App\Models\Assistant;
 use App\Services\ClaudeApiService;
 use Illuminate\Support\Facades\Storage;
 
@@ -11,7 +11,7 @@ beforeEach(function () {
 });
 
 it('replaces buyer name and email in system prompt', function () {
-    $task = LaunchpadTask::factory()->create([
+    $task = Assistant::factory()->create([
         'name' => 'Alice Johnson',
         'email' => 'alice@example.com',
     ]);
@@ -27,15 +27,15 @@ it('replaces buyer name and email in system prompt', function () {
 });
 
 it('builds messages array from stored messages', function () {
-    $task = LaunchpadTask::factory()->create();
+    $task = Assistant::factory()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
         'created_at' => now()->subMinutes(2),
     ]);
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'user',
         'content' => 'Hi there',
@@ -51,9 +51,9 @@ it('builds messages array from stored messages', function () {
 });
 
 it('appends user message to messages array when provided', function () {
-    $task = LaunchpadTask::factory()->create();
+    $task = Assistant::factory()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
@@ -66,11 +66,12 @@ it('appends user message to messages array when provided', function () {
         ->and($messages[1])->toBe(['role' => 'user', 'content' => 'My new message']);
 });
 
-it('returns empty array when no messages and no user message (auto-greeting)', function () {
-    $task = LaunchpadTask::factory()->create();
+it('returns fallback message when no messages and no user message (auto-greeting)', function () {
+    $task = Assistant::factory()->create();
 
     $service = new ClaudeApiService();
     $messages = $service->buildMessages($task);
 
-    expect($messages)->toBeEmpty();
+    expect($messages)->toHaveCount(1)
+        ->and($messages[0])->toBe(['role' => 'user', 'content' => 'Hello']);
 });

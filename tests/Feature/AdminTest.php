@@ -1,11 +1,11 @@
 <?php
 
-use App\Filament\Resources\LaunchpadTaskResource\Pages\EditLaunchpadTask;
-use App\Filament\Resources\LaunchpadTaskResource\Pages\ListLaunchpadTasks;
-use App\Filament\Resources\LaunchpadTaskResource\Pages\ViewLaunchpadTask;
+use App\Filament\Resources\AssistantResource\Pages\EditAssistant;
+use App\Filament\Resources\AssistantResource\Pages\ListAssistants;
+use App\Filament\Resources\AssistantResource\Pages\ViewAssistant;
 use App\Filament\Widgets\LaunchpadStatsWidget;
-use App\Models\LaunchpadMessage;
-use App\Models\LaunchpadTask;
+use App\Models\Chat;
+use App\Models\Assistant;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
@@ -15,6 +15,7 @@ beforeEach(function () {
         'name' => 'Admin',
         'email' => 'admin@test.com',
         'password' => Hash::make('password'),
+        'is_admin' => true,
     ]);
 });
 
@@ -31,9 +32,9 @@ it('allows authenticated admin to access admin panel', function () {
 });
 
 it('displays dashboard stats correctly', function () {
-    LaunchpadTask::factory()->create(['status' => 'completed', 'phase' => 1, 'phase_1_complete' => true]);
-    LaunchpadTask::factory()->create(['status' => 'completed', 'phase' => 2, 'phase_1_complete' => true]);
-    LaunchpadTask::factory()->create(['status' => 'active', 'phase' => 1]);
+    Assistant::factory()->create(['status' => 'completed', 'phase' => 1, 'phase_1_complete' => true]);
+    Assistant::factory()->create(['status' => 'completed', 'phase' => 2, 'phase_1_complete' => true]);
+    Assistant::factory()->create(['status' => 'active', 'phase' => 1]);
 
     $this->actingAs($this->admin);
 
@@ -44,55 +45,55 @@ it('displays dashboard stats correctly', function () {
 });
 
 it('displays task list with correct columns', function () {
-    $task = LaunchpadTask::factory()->active()->create([
+    $task = Assistant::factory()->active()->create([
         'name' => 'Jane Coach',
         'email' => 'jane@example.com',
     ]);
 
-    LaunchpadMessage::factory()->count(3)->create(['task_id' => $task->id]);
+    Chat::factory()->count(3)->create(['task_id' => $task->id]);
 
     $this->actingAs($this->admin);
 
-    Livewire::test(ListLaunchpadTasks::class)
+    Livewire::test(ListAssistants::class)
         ->assertCanSeeTableRecords([$task])
         ->assertSee('Jane Coach')
         ->assertSee('jane@example.com');
 });
 
 it('filters task list by status', function () {
-    $active = LaunchpadTask::factory()->active()->create();
-    $completed = LaunchpadTask::factory()->completed()->create();
+    $active = Assistant::factory()->active()->create();
+    $completed = Assistant::factory()->completed()->create();
 
     $this->actingAs($this->admin);
 
-    Livewire::test(ListLaunchpadTasks::class)
+    Livewire::test(ListAssistants::class)
         ->filterTable('status', 'active')
         ->assertCanSeeTableRecords([$active])
         ->assertCanNotSeeTableRecords([$completed]);
 });
 
 it('paginates task list at 25 per page', function () {
-    LaunchpadTask::factory()->count(30)->active()->create();
+    Assistant::factory()->count(30)->active()->create();
 
     $this->actingAs($this->admin);
 
-    Livewire::test(ListLaunchpadTasks::class)
+    Livewire::test(ListAssistants::class)
         ->assertCountTableRecords(30);
 });
 
 it('shows task detail view with conversation', function () {
-    $task = LaunchpadTask::factory()->active()->create([
+    $task = Assistant::factory()->active()->create([
         'name' => 'Alice Tester',
         'email' => 'alice@test.com',
     ]);
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Welcome to your session!',
     ]);
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'user',
         'content' => 'I need help with onboarding.',
@@ -100,7 +101,7 @@ it('shows task detail view with conversation', function () {
 
     $this->actingAs($this->admin);
 
-    Livewire::test(ViewLaunchpadTask::class, ['record' => $task->getRouteKey()])
+    Livewire::test(ViewAssistant::class, ['record' => $task->getRouteKey()])
         ->assertSee('Alice Tester')
         ->assertSee('alice@test.com')
         ->assertSee('Welcome to your session!')
@@ -108,14 +109,14 @@ it('shows task detail view with conversation', function () {
 });
 
 it('allows admin to edit buyer name and email', function () {
-    $task = LaunchpadTask::factory()->active()->create([
+    $task = Assistant::factory()->active()->create([
         'name' => 'Old Name',
         'email' => 'old@example.com',
     ]);
 
     $this->actingAs($this->admin);
 
-    Livewire::test(EditLaunchpadTask::class, ['record' => $task->getRouteKey()])
+    Livewire::test(EditAssistant::class, ['record' => $task->getRouteKey()])
         ->fillForm([
             'name' => 'New Name',
             'email' => 'new@example.com',
@@ -129,9 +130,9 @@ it('allows admin to edit buyer name and email', function () {
 });
 
 it('marks instruction sheet messages in task detail', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Here is your instruction sheet',
@@ -140,7 +141,7 @@ it('marks instruction sheet messages in task detail', function () {
 
     $this->actingAs($this->admin);
 
-    Livewire::test(ViewLaunchpadTask::class, ['record' => $task->getRouteKey()])
+    Livewire::test(ViewAssistant::class, ['record' => $task->getRouteKey()])
         ->assertSee('Instruction Sheet')
         ->assertSee('Here is your instruction sheet');
 });

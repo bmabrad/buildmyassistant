@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BlogPost;
+use App\Models\Article;
 
 class BlogController extends Controller
 {
     public function index()
     {
-        $posts = BlogPost::published()
+        $posts = Article::published()
             ->orderByDesc('published_at')
             ->paginate(12);
 
@@ -17,7 +17,7 @@ class BlogController extends Controller
 
     public function show(string $slug)
     {
-        $post = BlogPost::published()
+        $post = Article::published()
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -26,7 +26,7 @@ class BlogController extends Controller
 
     public function feed()
     {
-        $posts = BlogPost::published()
+        $posts = Article::published()
             ->orderByDesc('published_at')
             ->limit(20)
             ->get();

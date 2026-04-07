@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\LaunchpadMessage;
-use App\Models\LaunchpadTask;
+use App\Models\Chat;
+use App\Models\Assistant;
 use App\Services\ClaudeApiService;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,9 +19,9 @@ beforeEach(function () {
 });
 
 it('downloads instruction sheet as text file', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => '# My Assistant Instructions',
@@ -38,9 +38,9 @@ it('downloads instruction sheet as text file', function () {
 });
 
 it('returns the most recent instruction sheet', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Phase 1 sheet',
@@ -48,7 +48,7 @@ it('returns the most recent instruction sheet', function () {
         'created_at' => now()->subMinutes(5),
     ]);
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Phase 2 sheet (updated)',
@@ -62,9 +62,9 @@ it('returns the most recent instruction sheet', function () {
 });
 
 it('returns 404 when no instruction sheet exists', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Just a regular message',
@@ -83,16 +83,16 @@ it('returns 404 for invalid token on download', function () {
 });
 
 it('downloads full chat as text file', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Welcome!',
         'created_at' => now()->subMinutes(2),
     ]);
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'user',
         'content' => 'Thanks!',

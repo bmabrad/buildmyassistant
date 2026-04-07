@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\LaunchpadTask;
+use App\Models\Assistant;
 
 it('redirects to chat url when task exists', function () {
-    $task = LaunchpadTask::factory()->create([
+    $task = Assistant::factory()->create([
         'stripe_payment_id' => 'cs_test_redirect_success',
     ]);
 

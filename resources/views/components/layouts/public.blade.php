@@ -15,160 +15,86 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
 
-    <style>
-        :root {
-            --deep-slate: #1E2A38;
-            --mid-blue: #3D5A73;
-            --sage-accent: #7AA08A;
-            --soft-sage: #C8D8CC;
-            --off-white: #F4F6F4;
-        }
-
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            font-weight: 400;
-            color: var(--mid-blue);
-            background: white;
-            line-height: 1.7;
-            font-size: 16px;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        h1, h2, h3, h4 {
-            color: var(--deep-slate);
-            font-weight: 500;
-            line-height: 1.3;
-        }
-
-        h1 { font-size: 2.2rem; }
-        h2 { font-size: 1.5rem; margin-bottom: 12px; }
-        h3 { font-size: 1.1rem; }
-
-        a { color: var(--sage-accent); text-decoration: none; }
-        a:hover { text-decoration: underline; }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 14px 28px;
-            background: var(--sage-accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-family: 'Inter', sans-serif;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            text-decoration: none;
-            transition: opacity 0.2s;
-        }
-        .btn:hover { opacity: 0.9; text-decoration: none; }
-
-        .btn-outline {
-            background: white;
-            color: var(--sage-accent);
-            border: 1px solid var(--sage-accent);
-        }
-
-        /* Header */
-        .site-header {
-            padding: 16px 0;
-            border-bottom: 1px solid var(--soft-sage);
-            background: white;
-        }
-        .site-header .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .site-header img { height: 32px; }
-        .site-nav { display: flex; gap: 24px; align-items: center; }
-        .site-nav a {
-            color: var(--mid-blue);
-            font-size: 15px;
-            text-decoration: none;
-        }
-        .site-nav a:hover { color: var(--deep-slate); }
-        .nav-toggle { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
-        .nav-toggle svg { width: 24px; height: 24px; stroke: var(--deep-slate); }
-
-        /* Footer */
-        .site-footer {
-            padding: 40px 0;
-            border-top: 1px solid var(--soft-sage);
-            background: var(--off-white);
-            margin-top: 60px;
-        }
-        .footer-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .footer-content img { height: 24px; }
-        .footer-links { display: flex; gap: 20px; }
-        .footer-links a { color: var(--mid-blue); font-size: 14px; }
-        .footer-copy { font-size: 13px; color: var(--mid-blue); opacity: 0.7; width: 100%; text-align: center; margin-top: 16px; }
-
-        /* Sections */
-        .section { padding: 60px 0; }
-        .section-alt { background: var(--off-white); }
-        .section-header { text-align: center; margin-bottom: 40px; }
-        .section-header p { margin-top: 12px; max-width: 600px; margin-left: auto; margin-right: auto; }
-
-        @media (max-width: 640px) {
-            h1 { font-size: 1.7rem; }
-            h2 { font-size: 1.25rem; }
-            .section { padding: 40px 0; }
-            .site-nav { display: none; position: absolute; top: 64px; left: 0; right: 0; background: white; flex-direction: column; padding: 20px; gap: 16px; border-bottom: 1px solid var(--soft-sage); z-index: 50; }
-            .site-nav.open { display: flex; }
-            .nav-toggle { display: block; }
-            .footer-content { flex-direction: column; text-align: center; }
-            .footer-links { justify-content: center; }
-        }
-    </style>
+    @vite(['resources/css/app.css'])
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    @livewireStyles
 </head>
-<body>
-    <header class="site-header">
-        <div class="container" style="position: relative;">
-            <a href="/"><img src="/images/logos/logo_long_dark_text.svg" alt="Build My Assistant"></a>
-            <button class="nav-toggle" onclick="document.querySelector('.site-nav').classList.toggle('open')" aria-label="Toggle navigation">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+<body class="font-sans text-[15px] font-normal leading-[1.7] text-mid-blue bg-white">
+    {{-- Nav --}}
+    <nav class="bg-slate py-4">
+        <div class="max-w-[1000px] mx-auto px-6 flex items-center justify-between">
+            <a href="/" class="text-lg font-medium text-white no-underline">Build My Assistant<span class="text-sage">.co</span></a>
+            <button class="nav-toggle md:hidden text-white" onclick="document.getElementById('nav-links').classList.toggle('hidden')" aria-label="Toggle navigation">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
-            <nav class="site-nav">
-                <a href="/">Home</a>
-                <a href="/launchpad">Launchpad</a>
-                <a href="/blog">Blog</a>
-                <a href="/about">About</a>
-                <a href="/contact">Contact</a>
-            </nav>
+            <div id="nav-links" class="hidden md:flex gap-6 items-center">
+                <a href="/launchpad" class="text-soft-sage text-sm no-underline hover:text-white">Start Here</a>
+                <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                    <button @click="open = !open" class="text-soft-sage text-sm hover:text-white flex items-center gap-1">
+                        Company
+                        <svg class="w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                    </button>
+                    <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-36 bg-slate border border-soft-sage/20 rounded-md shadow-lg py-1 z-50">
+                        <a href="/about" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">About</a>
+                        <a href="/blog" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Latest</a>
+                        <a href="/contact" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Contact</a>
+                    </div>
+                </div>
+                @auth
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                        <button @click="open = !open" class="w-8 h-8 rounded-full bg-sage text-white text-xs font-medium flex items-center justify-center hover:opacity-90 transition-opacity" title="{{ auth()->user()->name }}">
+                            @php
+                                $nameParts = explode(' ', auth()->user()->name);
+                                $initials = strtoupper(substr($nameParts[0], 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
+                            @endphp
+                            {{ $initials }}
+                        </button>
+                        <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-36 bg-slate border border-soft-sage/20 rounded-md shadow-lg py-1 z-50">
+                            <a href="/dashboard" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Dashboard</a>
+                            <form method="POST" action="/logout">
+                                @csrf
+                                <button type="submit" class="block w-full text-left px-4 py-2 text-soft-sage text-sm hover:text-white hover:bg-white/5">Log out</button>
+                            </form>
+                        </div>
+                    </div>
+                @else
+                    <a href="/login" class="w-8 h-8 rounded-full border border-soft-sage/40 text-soft-sage flex items-center justify-center hover:text-white hover:border-white/40 transition-colors no-underline" title="Log in">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </a>
+                @endauth
+            </div>
         </div>
-    </header>
+    </nav>
 
     <main>
         {{ $slot }}
     </main>
 
-    <footer class="site-footer">
-        <div class="container">
-            <div class="footer-content">
-                <img src="/images/logos/logo_long_dark_text.svg" alt="Build My Assistant">
-                <div class="footer-links">
-                    <a href="/privacy">Privacy</a>
-                    <a href="/terms">Terms</a>
-                    <a href="/contact">Contact</a>
-                </div>
-                <p class="footer-copy">&copy; {{ date('Y') }} Build My Assistant. Custom AI assistants for coaches and consultants.</p>
+    <style>
+        main section > div {
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+        .dialog-box {
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+
+    {{-- Footer --}}
+    <footer class="bg-slate py-6">
+        <div class="max-w-[1000px] mx-auto px-6 flex items-center justify-between flex-wrap gap-4">
+            <p class="text-soft-sage text-xs">Build My Assistant.co - &copy; {{ date('Y') }}</p>
+            <div class="flex gap-4">
+                <a href="/privacy" class="text-soft-sage text-xs no-underline hover:text-white">Privacy policy</a>
+                <a href="/terms" class="text-soft-sage text-xs no-underline hover:text-white">Terms of use</a>
             </div>
         </div>
     </footer>
+    @livewireScripts
 </body>
 </html>

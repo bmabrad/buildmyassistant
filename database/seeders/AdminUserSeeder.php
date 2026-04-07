@@ -13,8 +13,9 @@ class AdminUserSeeder extends Seeder
         User::firstOrCreate(
             ['email' => env('ADMIN_EMAIL', 'admin@buildmyassistant.co')],
             [
-                'name' => env('ADMIN_NAME', 'Brad'),
+                'name' => env('ADMIN_NAME', 'Superman'),
                 'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
+                'is_admin' => true,
             ]
         );
     }

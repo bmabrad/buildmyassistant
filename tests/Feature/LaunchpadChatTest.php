@@ -1,13 +1,14 @@
 <?php
 
 use App\Livewire\LaunchpadChat;
-use App\Models\LaunchpadMessage;
-use App\Models\LaunchpadTask;
+use App\Models\Chat;
+use App\Models\Assistant;
 use App\Services\ClaudeApiService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
+    \Illuminate\Support\Facades\Cache::flush();
     Storage::fake('local');
     Storage::disk('local')->put('launchpad/system_prompt.md', 'You are a guide. Buyer: {{BUYER_NAME}} ({{BUYER_EMAIL}})');
 
@@ -23,10 +24,10 @@ beforeEach(function () {
 });
 
 it('loads the chat page for a valid token', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
     // Pre-seed a message so mount doesn't trigger streaming
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
@@ -39,25 +40,27 @@ it('loads the chat page for a valid token', function () {
 });
 
 it('auto-generates greeting on first visit', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])
+        ->assertSet('needsGreeting', true)
+        ->call('generateGreeting')
         ->assertSet('isStreaming', false);
 
     // The greeting should have been stored
-    expect($task->messages()->count())->toBe(1);
+    expect($task->chats()->count())->toBe(1);
 
-    $greeting = $task->messages()->first();
+    $greeting = $task->chats()->first();
     expect($greeting->role)->toBe('assistant')
         ->and($greeting->content)->toBe('Hello! How can I help you today?')
         ->and($greeting->phase)->toBe(1);
 });
 
 it('does not auto-generate greeting on return visit', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
     // Pre-existing messages
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Previous greeting',
@@ -66,14 +69,14 @@ it('does not auto-generate greeting on return visit', function () {
     Livewire::test(LaunchpadChat::class, ['task' => $task]);
 
     // Should still only have the one pre-existing message
-    expect($task->messages()->count())->toBe(1);
+    expect($task->chats()->count())->toBe(1);
 });
 
 it('stores user message and assistant response when sending', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
     // Pre-seed a greeting so mount doesn't trigger streaming
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
@@ -81,9 +84,10 @@ it('stores user message and assistant response when sending', function () {
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])
         ->set('input', 'I need help with email follow-ups')
-        ->call('sendMessage');
+        ->call('sendMessage')
+        ->call('streamResponse');
 
-    $messages = $task->messages()->orderBy('created_at', 'asc')->get();
+    $messages = $task->chats()->orderBy('created_at', 'asc')->get();
 
     expect($messages)->toHaveCount(3)
         ->and($messages[1]->role)->toBe('user')
@@ -93,10 +97,10 @@ it('stores user message and assistant response when sending', function () {
 });
 
 it('sets correct phase on messages', function () {
-    $task = LaunchpadTask::factory()->active()->create(['phase' => 1]);
+    $task = Assistant::factory()->active()->create(['phase' => 1]);
 
     // Pre-seed a greeting
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
@@ -104,17 +108,18 @@ it('sets correct phase on messages', function () {
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])
         ->set('input', 'Test message')
-        ->call('sendMessage');
+        ->call('sendMessage')
+        ->call('streamResponse');
 
-    $userMessage = $task->messages()->where('role', 'user')->first();
+    $userMessage = $task->chats()->where('role', 'user')->first();
     expect($userMessage->phase)->toBe(1);
 });
 
 it('does not send empty messages', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
     // Pre-seed a greeting
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
@@ -125,18 +130,18 @@ it('does not send empty messages', function () {
         ->call('sendMessage');
 
     // Only the pre-seeded greeting should exist
-    expect($task->messages()->count())->toBe(1);
+    expect($task->chats()->count())->toBe(1);
 });
 
 it('displays existing messages on return visit', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Welcome back!',
     ]);
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'user',
         'content' => 'Thanks!',
@@ -148,9 +153,9 @@ it('displays existing messages on return visit', function () {
 });
 
 it('clears input after sending', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',

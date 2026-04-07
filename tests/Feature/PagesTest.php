@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\BlogPost;
+use App\Models\Article;
 
 it('loads the homepage', function () {
     $this->get('/')->assertStatus(200)->assertSee('Build My Assistant');
@@ -11,7 +11,7 @@ it('loads the about page', function () {
 });
 
 it('loads the contact page', function () {
-    $this->get('/contact')->assertStatus(200)->assertSee('hello@buildmyassistant.co');
+    $this->get('/contact')->assertStatus(200)->assertSee('Get in touch');
 });
 
 it('loads the privacy page', function () {
@@ -47,7 +47,7 @@ it('loads the blog index page', function () {
 });
 
 it('shows published blog posts on the index', function () {
-    BlogPost::create([
+    Article::create([
         'title' => 'Test Published Post',
         'slug' => 'test-published-post',
         'content' => 'This is test content.',
@@ -55,7 +55,7 @@ it('shows published blog posts on the index', function () {
         'published_at' => now()->subDay(),
     ]);
 
-    BlogPost::create([
+    Article::create([
         'title' => 'Draft Post',
         'slug' => 'draft-post',
         'content' => 'This is a draft.',
@@ -69,7 +69,7 @@ it('shows published blog posts on the index', function () {
 });
 
 it('shows a single blog post by slug', function () {
-    BlogPost::create([
+    Article::create([
         'title' => 'My Blog Post',
         'slug' => 'my-blog-post',
         'content' => 'Full blog content here.',
@@ -84,7 +84,7 @@ it('shows a single blog post by slug', function () {
 });
 
 it('returns 404 for unpublished blog post', function () {
-    BlogPost::create([
+    Article::create([
         'title' => 'Hidden Post',
         'slug' => 'hidden-post',
         'content' => 'Secret.',
@@ -96,7 +96,7 @@ it('returns 404 for unpublished blog post', function () {
 });
 
 it('returns 404 for future blog post', function () {
-    BlogPost::create([
+    Article::create([
         'title' => 'Future Post',
         'slug' => 'future-post',
         'content' => 'Not yet.',
@@ -108,7 +108,7 @@ it('returns 404 for future blog post', function () {
 });
 
 it('serves the blog RSS feed', function () {
-    BlogPost::create([
+    Article::create([
         'title' => 'RSS Post',
         'slug' => 'rss-post',
         'content' => 'Feed content.',

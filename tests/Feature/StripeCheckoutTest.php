@@ -9,7 +9,7 @@ it('redirects to stripe checkout on post to checkout route', function () {
     // Without valid Stripe keys, this will throw an exception.
     // We verify the route is wired up by catching the expected error.
     // In production, this redirects to Stripe Checkout.
-    expect($response->status())->toBeIn([302, 500]);
+    expect($response->status())->toBeIn([302, 303, 500]);
 });
 
 it('shows the sales page', function () {

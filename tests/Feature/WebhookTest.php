@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\LaunchpadTask;
+use App\Models\Assistant;
 use Laravel\Cashier\Http\Middleware\VerifyWebhookSignature;
 
 beforeEach(function () {
@@ -24,7 +24,7 @@ it('creates a task from checkout.session.completed webhook', function () {
 
     $this->postJson('/stripe/webhook', $payload)->assertOk();
 
-    $task = LaunchpadTask::where('stripe_payment_id', 'cs_test_123456')->first();
+    $task = Assistant::where('stripe_payment_id', 'cs_test_123456')->first();
 
     expect($task)->not->toBeNull()
         ->and($task->name)->toBe('Jane Smith')
@@ -54,7 +54,7 @@ it('is idempotent for duplicate webhook events', function () {
     $this->postJson('/stripe/webhook', $payload);
     $this->postJson('/stripe/webhook', $payload);
 
-    expect(LaunchpadTask::where('stripe_payment_id', 'cs_test_duplicate')->count())->toBe(1);
+    expect(Assistant::where('stripe_payment_id', 'cs_test_duplicate')->count())->toBe(1);
 });
 
 it('handles missing customer details gracefully', function () {
@@ -70,7 +70,7 @@ it('handles missing customer details gracefully', function () {
 
     $this->postJson('/stripe/webhook', $payload);
 
-    $task = LaunchpadTask::where('stripe_payment_id', 'cs_test_minimal')->first();
+    $task = Assistant::where('stripe_payment_id', 'cs_test_minimal')->first();
 
     expect($task)->not->toBeNull()
         ->and($task->name)->toBe('Unknown')

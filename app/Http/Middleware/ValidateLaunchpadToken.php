@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\LaunchpadTask;
+use App\Models\Assistant;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,7 +13,7 @@ class ValidateLaunchpadToken
     {
         $token = $request->route('token');
 
-        $task = LaunchpadTask::where('token', $token)->first();
+        $task = Assistant::where('token', $token)->first();
 
         if (! $task) {
             abort(404);

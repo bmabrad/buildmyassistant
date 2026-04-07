@@ -1,13 +1,14 @@
 <?php
 
 use App\Livewire\LaunchpadChat;
-use App\Models\LaunchpadMessage;
-use App\Models\LaunchpadTask;
+use App\Models\Chat;
+use App\Models\Assistant;
 use App\Services\ClaudeApiService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
+    \Illuminate\Support\Facades\Cache::flush();
     Storage::fake('local');
     Storage::disk('local')->put('launchpad/system_prompt.md', 'Test prompt for {{BUYER_NAME}}');
 
@@ -22,9 +23,9 @@ it('detects instruction sheet marker and sets is_instruction_sheet on message', 
         })();
     });
 
-    $task = LaunchpadTask::factory()->active()->create(['phase' => 1]);
+    $task = Assistant::factory()->active()->create(['phase' => 1]);
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
@@ -32,9 +33,10 @@ it('detects instruction sheet marker and sets is_instruction_sheet on message', 
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])
         ->set('input', 'Build me an assistant')
-        ->call('sendMessage');
+        ->call('sendMessage')
+        ->call('streamResponse');
 
-    $assistantMessage = $task->messages()->where('role', 'assistant')->latest('id')->first();
+    $assistantMessage = $task->chats()->where('role', 'assistant')->latest('id')->first();
 
     expect($assistantMessage->is_instruction_sheet)->toBeTrue()
         ->and($assistantMessage->content)->not->toContain('<!-- INSTRUCTION_SHEET -->');
@@ -47,9 +49,9 @@ it('strips marker from stored content', function () {
         })();
     });
 
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
@@ -57,9 +59,10 @@ it('strips marker from stored content', function () {
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])
         ->set('input', 'Help me')
-        ->call('sendMessage');
+        ->call('sendMessage')
+        ->call('streamResponse');
 
-    $message = $task->messages()->where('is_instruction_sheet', true)->first();
+    $message = $task->chats()->where('is_instruction_sheet', true)->first();
 
     expect($message->content)->toBe('Your instructions');
 });
@@ -71,12 +74,12 @@ it('sets phase_1_complete on task when first instruction sheet is delivered', fu
         })();
     });
 
-    $task = LaunchpadTask::factory()->active()->create([
+    $task = Assistant::factory()->active()->create([
         'phase' => 1,
         'phase_1_complete' => false,
     ]);
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
@@ -84,7 +87,8 @@ it('sets phase_1_complete on task when first instruction sheet is delivered', fu
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])
         ->set('input', 'Build it')
-        ->call('sendMessage');
+        ->call('sendMessage')
+        ->call('streamResponse');
 
     expect($task->fresh()->phase_1_complete)->toBeTrue();
 });
@@ -96,12 +100,12 @@ it('sets task to completed when second instruction sheet is delivered', function
         })();
     });
 
-    $task = LaunchpadTask::factory()->active()->create([
+    $task = Assistant::factory()->active()->create([
         'phase' => 1,
         'phase_1_complete' => true,
     ]);
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
@@ -109,7 +113,8 @@ it('sets task to completed when second instruction sheet is delivered', function
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])
         ->set('input', 'Go deeper')
-        ->call('sendMessage');
+        ->call('sendMessage')
+        ->call('streamResponse');
 
     $fresh = $task->fresh();
     expect($fresh->status)->toBe('completed')
@@ -123,12 +128,12 @@ it('transitions to phase 2 when user sends message after phase_1_complete', func
         })();
     });
 
-    $task = LaunchpadTask::factory()->active()->create([
+    $task = Assistant::factory()->active()->create([
         'phase' => 1,
         'phase_1_complete' => true,
     ]);
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Hello!',
@@ -136,15 +141,16 @@ it('transitions to phase 2 when user sends message after phase_1_complete', func
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])
         ->set('input', 'Yes, let us go deeper')
-        ->call('sendMessage');
+        ->call('sendMessage')
+        ->call('streamResponse');
 
     expect($task->fresh()->phase)->toBe(2);
 });
 
 it('renders instruction sheet messages with copy and download buttons', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Here is your instruction sheet content',
@@ -157,9 +163,9 @@ it('renders instruction sheet messages with copy and download buttons', function
 });
 
 it('does not render copy/download buttons on regular messages', function () {
-    $task = LaunchpadTask::factory()->active()->create();
+    $task = Assistant::factory()->active()->create();
 
-    LaunchpadMessage::factory()->create([
+    Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Just a regular message',
