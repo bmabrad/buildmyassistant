@@ -19,7 +19,7 @@ it('allows an admin to impersonate a user and see their dashboard', function () 
 
     $this->get('/dashboard')
         ->assertOk()
-        ->assertSee('Welcome back, Karen Whitfield')
+        ->assertSee('Welcome back, ' . ($buyer->first_name ?? 'Karen'))
         ->assertSee('Client Intake Navigator');
 });
 

@@ -119,7 +119,7 @@ it('shows both download buttons for each deliverable in chat', function () {
 
     $response->assertOk();
     $response->assertSee('Download Playbook');
-    $response->assertSee('Download Instructions');
+    $response->assertSee('Download AssistantInstructions.md');
     $response->assertSee("/launchpad/{$task->token}/playbook.pdf?message={$msg->id}");
     $response->assertSee("/launchpad/{$task->token}/instructions.md?message={$msg->id}");
 });

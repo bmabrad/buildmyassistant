@@ -167,7 +167,7 @@ it('renders deliverable messages with copy and two download buttons', function (
     Livewire::test(LaunchpadChat::class, ['task' => $task])
         ->assertSee('Copy instructions')
         ->assertSee('Download Playbook')
-        ->assertSee('Download Instructions');
+        ->assertSee('Download AssistantInstructions.md');
 });
 
 it('does not render copy/download buttons on regular messages', function () {
