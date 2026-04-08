@@ -31,6 +31,7 @@ class LaunchpadController extends Controller
             'success_url' => route('launchpad.success') . '?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('launchpad'),
             'customer_creation' => 'always',
+            'allow_promotion_codes' => true,
             'payment_intent_data' => [
                 'setup_future_usage' => 'off_session',
             ],
