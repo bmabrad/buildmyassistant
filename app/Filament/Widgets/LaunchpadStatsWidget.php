@@ -20,7 +20,7 @@ class LaunchpadStatsWidget extends StatsOverviewWidget
             ? round(($completedTasks / $totalTasks) * 100, 1)
             : 0;
 
-        $phase1CompleteTasks = Assistant::where('phase_1_complete', true)->count();
+        $phase1CompleteTasks = Assistant::where('playbook_delivered', true)->count();
         $phase2Tasks = Assistant::where('phase', 2)->count();
         $phase2Rate = $phase1CompleteTasks > 0
             ? round(($phase2Tasks / $phase1CompleteTasks) * 100, 1)

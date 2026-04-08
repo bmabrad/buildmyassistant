@@ -32,6 +32,19 @@
                 </h1>
             </div>
 
+            {{-- Support countdown indicator --}}
+            @if ($isPostPlaybook && ! $isLocked && $daysRemaining !== null)
+                <div class="chat-countdown">
+                    @if ($daysRemaining === -1)
+                        Less than 1 day of support remaining
+                    @elseif ($daysRemaining === 1)
+                        You have 1 day of support remaining
+                    @else
+                        You have {{ $daysRemaining }} days of support remaining
+                    @endif
+                </div>
+            @endif
+
             {{-- Messages --}}
             <div
                 x-ref="chatContainer"
@@ -104,36 +117,47 @@
                 </div>
             @endif
 
-            {{-- Input --}}
-            <div class="chat-input-area">
-                <form
-                    wire:submit="sendMessage"
-                    style="display: flex; gap: 8px; align-items: flex-end;"
-                >
-                    <textarea
-                        x-ref="messageInput"
-                        wire:model="input"
-                        rows="2"
-                        placeholder="Type your message..."
-                        maxlength="5000"
-                        @if ($isStreaming) disabled @endif
-                        autofocus
-                        class="chat-input"
-                        x-on:keydown="handleKeydown($event)"
-                    ></textarea>
-                    <button
-                        type="submit"
-                        @if ($isStreaming) disabled @endif
-                        class="chat-send-btn"
-                        style="
-                            cursor: {{ $isStreaming ? 'not-allowed' : 'pointer' }};
-                            opacity: {{ $isStreaming ? '0.6' : '1' }};
-                        "
+            {{-- Input or lockout --}}
+            @if ($isLocked)
+                <div class="chat-lockout">
+                    @if ($lockReason === 'tokens')
+                        <p>You've used your available support messages. You can still view your Playbook above.</p>
+                    @else
+                        <p>Your 7-day support window has closed. You can still view your Playbook above.</p>
+                    @endif
+                    <p style="margin-top: 8px;">If you'd like us to build your assistant for you, <a href="/fast-track" class="chat-lockout-link">check out Fast Track</a>.</p>
+                </div>
+            @else
+                <div class="chat-input-area">
+                    <form
+                        wire:submit="sendMessage"
+                        style="display: flex; gap: 8px; align-items: flex-end;"
                     >
-                        Send
-                    </button>
-                </form>
-            </div>
+                        <textarea
+                            x-ref="messageInput"
+                            wire:model="input"
+                            rows="2"
+                            placeholder="Type your message..."
+                            maxlength="5000"
+                            @if ($isStreaming) disabled @endif
+                            autofocus
+                            class="chat-input"
+                            x-on:keydown="handleKeydown($event)"
+                        ></textarea>
+                        <button
+                            type="submit"
+                            @if ($isStreaming) disabled @endif
+                            class="chat-send-btn"
+                            style="
+                                cursor: {{ $isStreaming ? 'not-allowed' : 'pointer' }};
+                                opacity: {{ $isStreaming ? '0.6' : '1' }};
+                            "
+                        >
+                            Send
+                        </button>
+                    </form>
+                </div>
+            @endif
         </div>
 
         {{-- Instructions panel (right sidebar) --}}
@@ -160,7 +184,7 @@
                 </div>
                 <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
                     <span class="sidebar-step-num">5</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Launch your assistant</p>
+                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Get your Playbook and 7 days of support</p>
                 </div>
             </div>
 
@@ -169,7 +193,7 @@
                 <ul style="font-size: 0.75rem; color: var(--mid-blue); line-height: 1.6; margin: 0; padding-left: 1rem;">
                     <li>Answer one question at a time</li>
                     <li>Be as specific as you can about your process</li>
-                    <li>Your chat link stays active so you can come back anytime</li>
+                    <li>You get 7 days of support after your Playbook is delivered</li>
                 </ul>
             </div>
         </div>
@@ -318,6 +342,36 @@
             background: rgba(255, 255, 255, 0.1);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chat-countdown {
+            padding: 8px 20px;
+            background: #f0f5f1;
+            border-bottom: 1px solid var(--soft-sage);
+            color: var(--mid-blue);
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .chat-lockout {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid var(--soft-sage);
+            color: var(--mid-blue);
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .chat-lockout p {
+            margin: 0;
+        }
+
+        .chat-lockout-link {
+            color: var(--sage-accent);
+            font-weight: 500;
+            text-decoration: underline;
         }
 
         .chat-error {

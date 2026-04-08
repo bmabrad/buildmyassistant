@@ -44,4 +44,8 @@ return [
         'model' => env('CLAUDE_MODEL', 'claude-sonnet-4-20250514'),
     ],
 
+    'launchpad' => [
+        'token_limit' => (int) env('LAUNCHPAD_TOKEN_LIMIT', 0),
+    ],
+
 ];

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\PromptBuilderController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\DashboardController;
@@ -94,6 +95,12 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/admin/impersonate/{user}', [ImpersonationController::class, 'start'])->name('admin.impersonate');
     Route::post('/admin/stop-impersonating', [ImpersonationController::class, 'stop'])->name('admin.stop-impersonating');
+});
+
+// Admin prompt builder
+Route::middleware(['auth'])->prefix('admin')->group(function () {
+    Route::get('/prompt-builder', [PromptBuilderController::class, 'index'])->name('admin.prompt-builder');
+    Route::post('/prompt-builder/chat', [PromptBuilderController::class, 'chat'])->name('admin.prompt-builder.chat');
 });
 
 // Stripe webhook

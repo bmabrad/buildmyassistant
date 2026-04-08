@@ -20,6 +20,10 @@ beforeEach(function () {
             yield 'How can I help you today?';
         })();
     });
+    $mock->shouldReceive('getLastStreamUsage')->andReturn([
+        'input_tokens' => 100,
+        'output_tokens' => 50,
+    ]);
     app()->instance(ClaudeApiService::class, $mock);
 });
 

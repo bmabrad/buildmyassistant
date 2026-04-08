@@ -80,8 +80,8 @@ it('casts phase to integer', function () {
     expect($task->phase)->toBeInt();
 });
 
-it('casts phase_1_complete to boolean', function () {
-    $task = Assistant::factory()->create(['phase_1_complete' => false]);
+it('casts playbook_delivered to boolean', function () {
+    $task = Assistant::factory()->create(['playbook_delivered' => false]);
 
-    expect($task->phase_1_complete)->toBeBool();
+    expect($task->playbook_delivered)->toBeBool();
 });

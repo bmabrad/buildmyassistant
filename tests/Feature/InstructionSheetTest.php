@@ -13,6 +13,10 @@ beforeEach(function () {
     Storage::disk('local')->put('launchpad/system_prompt.md', 'Test prompt for {{BUYER_NAME}}');
 
     $this->mock = Mockery::mock(ClaudeApiService::class)->makePartial();
+    $this->mock->shouldReceive('getLastStreamUsage')->andReturn([
+        'input_tokens' => 100,
+        'output_tokens' => 50,
+    ]);
     app()->instance(ClaudeApiService::class, $this->mock);
 });
 
@@ -67,7 +71,7 @@ it('strips marker from stored content', function () {
     expect($message->content)->toBe('Your instructions');
 });
 
-it('sets phase_1_complete on task when first instruction sheet is delivered', function () {
+it('sets playbook_delivered on task when first instruction sheet is delivered', function () {
     $this->mock->shouldReceive('streamChat')->andReturnUsing(function () {
         return (function () {
             yield "Instruction sheet content<!-- INSTRUCTION_SHEET -->";
@@ -76,7 +80,7 @@ it('sets phase_1_complete on task when first instruction sheet is delivered', fu
 
     $task = Assistant::factory()->active()->create([
         'phase' => 1,
-        'phase_1_complete' => false,
+        'playbook_delivered' => false,
     ]);
 
     Chat::factory()->create([
@@ -90,19 +94,19 @@ it('sets phase_1_complete on task when first instruction sheet is delivered', fu
         ->call('sendMessage')
         ->call('streamResponse');
 
-    expect($task->fresh()->phase_1_complete)->toBeTrue();
+    expect($task->fresh()->playbook_delivered)->toBeTrue();
 });
 
-it('sets task to completed when second instruction sheet is delivered', function () {
+it('sets task to completed and transitions to Post-Playbook on Playbook delivery', function () {
     $this->mock->shouldReceive('streamChat')->andReturnUsing(function () {
         return (function () {
-            yield "Updated sheet<!-- INSTRUCTION_SHEET -->";
+            yield "Your Playbook<!-- INSTRUCTION_SHEET -->";
         })();
     });
 
     $task = Assistant::factory()->active()->create([
         'phase' => 1,
-        'phase_1_complete' => true,
+        'playbook_delivered' => false,
     ]);
 
     Chat::factory()->create([
@@ -112,39 +116,15 @@ it('sets task to completed when second instruction sheet is delivered', function
     ]);
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])
-        ->set('input', 'Go deeper')
+        ->set('input', 'Build it')
         ->call('sendMessage')
         ->call('streamResponse');
 
     $fresh = $task->fresh();
     expect($fresh->status)->toBe('completed')
-        ->and($fresh->phase)->toBe(2);
-});
-
-it('transitions to phase 2 when user sends message after phase_1_complete', function () {
-    $this->mock->shouldReceive('streamChat')->andReturnUsing(function () {
-        return (function () {
-            yield 'Great, let us dig deeper.';
-        })();
-    });
-
-    $task = Assistant::factory()->active()->create([
-        'phase' => 1,
-        'phase_1_complete' => true,
-    ]);
-
-    Chat::factory()->create([
-        'task_id' => $task->id,
-        'role' => 'assistant',
-        'content' => 'Hello!',
-    ]);
-
-    Livewire::test(LaunchpadChat::class, ['task' => $task])
-        ->set('input', 'Yes, let us go deeper')
-        ->call('sendMessage')
-        ->call('streamResponse');
-
-    expect($task->fresh()->phase)->toBe(2);
+        ->and($fresh->playbook_delivered)->toBeTrue()
+        ->and($fresh->in_post_playbook)->toBeTrue()
+        ->and($fresh->session_completed_at)->not->toBeNull();
 });
 
 it('renders instruction sheet messages with copy and download buttons', function () {

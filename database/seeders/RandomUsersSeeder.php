@@ -134,7 +134,7 @@ class RandomUsersSeeder extends Seeder
                     'email' => $user->email,
                     'status' => $isCompleted ? 'completed' : 'active',
                     'phase' => 1,
-                    'phase_1_complete' => $isCompleted,
+                    'playbook_delivered' => $isCompleted,
                     'assistant_name' => $isCompleted ? $this->assistantNames[$nameIndex] : null,
                     'bottleneck_summary' => $this->bottlenecks[$nameIndex],
                     'user_id' => $user->id,

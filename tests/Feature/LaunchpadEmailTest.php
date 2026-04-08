@@ -38,10 +38,10 @@ beforeEach(function () {
     Storage::disk('local')->put('launchpad/system_prompt.md', 'You are a guide. Buyer: {{BUYER_NAME}} ({{BUYER_EMAIL}})');
 });
 
-it('queues completion email when task status changes to completed', function () use ($instructionSheetContent) {
+it('queues completion email when Playbook is delivered', function () use ($instructionSheetContent) {
     $task = Assistant::factory()->active()->create([
         'phase' => 1,
-        'phase_1_complete' => true,
+        'playbook_delivered' => false,
         'name' => 'Brad',
         'email' => 'brad@example.com',
     ]);
@@ -49,7 +49,6 @@ it('queues completion email when task status changes to completed', function () 
     // Seed a prior message so mount doesn't trigger streaming
     Chat::factory()->fromAssistant()->create(['task_id' => $task->id]);
 
-    // Mock Claude to return a Phase 2 instruction sheet
     $mock = Mockery::mock(ClaudeApiService::class)->makePartial();
     $mock->shouldReceive('streamChat')->andReturnUsing(function () use ($instructionSheetContent) {
         return (function () use ($instructionSheetContent) {
@@ -57,15 +56,21 @@ it('queues completion email when task status changes to completed', function () 
             yield "\n<!-- INSTRUCTION_SHEET -->";
         })();
     });
+    $mock->shouldReceive('getLastStreamUsage')->andReturn([
+        'input_tokens' => 100,
+        'output_tokens' => 50,
+    ]);
     app()->instance(ClaudeApiService::class, $mock);
 
     Livewire::test(\App\Livewire\LaunchpadChat::class, ['task' => $task])
-        ->set('input', 'Yes, let us go deeper')
+        ->set('input', 'Build me an assistant')
         ->call('sendMessage')
         ->call('streamResponse');
 
     $task->refresh();
-    expect($task->status)->toBe('completed');
+    expect($task->status)->toBe('completed')
+        ->and($task->playbook_delivered)->toBeTrue()
+        ->and($task->session_completed_at)->not->toBeNull();
 
     Mail::assertQueued(LaunchpadCompletionMail::class, function ($mail) use ($task) {
         return $mail->hasTo('brad@example.com')
@@ -73,10 +78,10 @@ it('queues completion email when task status changes to completed', function () 
     });
 });
 
-it('does not send email when phase 1 instruction sheet is delivered', function () use ($instructionSheetContent) {
-    $task = Assistant::factory()->active()->create([
-        'phase' => 1,
-        'phase_1_complete' => false,
+it('does not send email again if Playbook was already delivered', function () use ($instructionSheetContent) {
+    $task = Assistant::factory()->postPlaybook()->create([
+        'name' => 'Brad',
+        'email' => 'brad@example.com',
     ]);
 
     Chat::factory()->fromAssistant()->create(['task_id' => $task->id]);
@@ -88,16 +93,16 @@ it('does not send email when phase 1 instruction sheet is delivered', function (
             yield "\n<!-- INSTRUCTION_SHEET -->";
         })();
     });
+    $mock->shouldReceive('getLastStreamUsage')->andReturn([
+        'input_tokens' => 100,
+        'output_tokens' => 50,
+    ]);
     app()->instance(ClaudeApiService::class, $mock);
 
     Livewire::test(\App\Livewire\LaunchpadChat::class, ['task' => $task])
-        ->set('input', 'I want to automate follow-up emails')
+        ->set('input', 'Can you update my Playbook?')
         ->call('sendMessage')
         ->call('streamResponse');
-
-    $task->refresh();
-    expect($task->phase_1_complete)->toBeTrue();
-    expect($task->status)->not->toBe('completed');
 
     Mail::assertNotQueued(LaunchpadCompletionMail::class);
 });

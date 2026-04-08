@@ -50,6 +50,17 @@ class LaunchpadChat extends Component
             return;
         }
 
+        // Check if chat is locked (support window expired or token limit reached)
+        $this->task->refresh();
+        if ($this->task->isChatLocked()) {
+            $reason = $this->task->lockReason();
+            $this->error = $reason === 'tokens'
+                ? "You've used your available support messages."
+                : 'Your 7-day support window has closed.';
+
+            return;
+        }
+
         if (mb_strlen($message) > 5000) {
             $this->error = 'Your message is too long. Please keep it under 5,000 characters.';
 
@@ -68,11 +79,6 @@ class LaunchpadChat extends Component
         RateLimiter::hit($rateLimitKey, 60);
 
         $this->input = '';
-
-        // If Phase 1 is complete, transition to Phase 2 on next user message
-        if ($this->task->phase_1_complete && $this->task->phase === 1) {
-            $this->task->update(['phase' => 2]);
-        }
 
         // Store the user's message
         $this->task->chats()->create([
@@ -114,6 +120,12 @@ class LaunchpadChat extends Component
             );
         }
 
+        // Record token usage from the completed stream
+        $usage = $api->getLastStreamUsage();
+        if ($usage['input_tokens'] > 0 || $usage['output_tokens'] > 0) {
+            $this->task->recordTokenUsage($usage['input_tokens'], $usage['output_tokens']);
+        }
+
         // Detect and handle instruction sheet marker
         $isInstructionSheet = $this->detectInstructionSheet($fullResponse);
         if ($isInstructionSheet) {
@@ -128,14 +140,15 @@ class LaunchpadChat extends Component
             'is_instruction_sheet' => $isInstructionSheet,
         ]);
 
-        // Handle phase transitions when instruction sheet is detected
-        if ($isInstructionSheet) {
-            if (! $this->task->phase_1_complete) {
-                $this->task->update(['phase_1_complete' => true]);
-            } else {
-                $this->task->update(['phase' => 2, 'status' => 'completed']);
-                Mail::to($this->task->email)->send(new LaunchpadCompletionMail($this->task));
-            }
+        // Handle Playbook delivery: set session_completed_at and transition to Post-Playbook
+        if ($isInstructionSheet && ! $this->task->playbook_delivered) {
+            $this->task->update([
+                'playbook_delivered' => true,
+                'in_post_playbook' => true,
+                'session_completed_at' => now(),
+                'status' => 'completed',
+            ]);
+            Mail::to($this->task->email)->send(new LaunchpadCompletionMail($this->task));
         }
 
         $this->isStreaming = false;
@@ -159,8 +172,14 @@ class LaunchpadChat extends Component
 
     public function render()
     {
+        $this->task->refresh();
+
         return view('livewire.launchpad-chat', [
             'messages' => $this->task->chats()->orderBy('created_at', 'asc')->get(),
+            'isPostPlaybook' => $this->task->isPostPlaybook(),
+            'isLocked' => $this->task->isChatLocked(),
+            'lockReason' => $this->task->lockReason(),
+            'daysRemaining' => $this->task->supportDaysRemaining(),
         ]);
     }
 }

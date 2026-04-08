@@ -35,7 +35,7 @@ it('creates a task from checkout.session.completed webhook', function () {
         ->and($task->stripe_customer_id)->toBe('cus_test_789')
         ->and($task->status)->toBe('pending')
         ->and($task->phase)->toBe(1)
-        ->and($task->phase_1_complete)->toBeFalse()
+        ->and($task->playbook_delivered)->toBeFalse()
         ->and($task->token)->toMatch('/^[0-9a-f]{8}-/i');
 });
 

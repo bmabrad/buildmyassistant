@@ -84,7 +84,7 @@ class StripeWebhookController extends WebhookController
                 'email' => $email,
                 'status' => 'pending',
                 'phase' => 1,
-                'phase_1_complete' => false,
+                'playbook_delivered' => false,
                 'user_id' => $user?->id,
             ]);
 

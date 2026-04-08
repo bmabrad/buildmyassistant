@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,13 +27,23 @@ class Assistant extends Model
         'assistant_name',
         'bottleneck_summary',
         'phase',
-        'phase_1_complete',
+        'playbook_delivered',
+        'in_post_playbook',
+        'session_completed_at',
+        'fast_track_nudge_count',
+        'total_input_tokens',
+        'total_output_tokens',
         'user_id',
     ];
 
     protected $casts = [
         'phase' => 'integer',
-        'phase_1_complete' => 'boolean',
+        'playbook_delivered' => 'boolean',
+        'in_post_playbook' => 'boolean',
+        'session_completed_at' => 'datetime',
+        'fast_track_nudge_count' => 'integer',
+        'total_input_tokens' => 'integer',
+        'total_output_tokens' => 'integer',
     ];
 
     protected static function booted(): void
@@ -84,5 +95,110 @@ class Assistant extends Model
     public function markCompleted(): void
     {
         $this->update(['status' => 'completed']);
+    }
+
+    /**
+     * A return visit is when the buyer comes back to an existing session
+     * that already has messages beyond the initial greeting exchange.
+     */
+    public function isReturnVisit(): bool
+    {
+        return $this->chats()->count() > 2;
+    }
+
+    public function isPostPlaybook(): bool
+    {
+        return (bool) $this->playbook_delivered;
+    }
+
+    /**
+     * The 7-day support window is open if the Playbook has been delivered
+     * and fewer than 168 hours (7 days) have passed since delivery.
+     */
+    public function isSupportWindowOpen(): bool
+    {
+        if (! $this->session_completed_at) {
+            return false;
+        }
+
+        return $this->session_completed_at->addDays(7)->isFuture();
+    }
+
+    /**
+     * Calculate whole days remaining in the support window.
+     * Returns null if the Playbook has not been delivered.
+     */
+    public function supportDaysRemaining(): ?int
+    {
+        if (! $this->session_completed_at) {
+            return null;
+        }
+
+        $expiresAt = $this->session_completed_at->addDays(7);
+        $hoursLeft = now()->diffInHours($expiresAt, false);
+
+        if ($hoursLeft <= 0) {
+            return 0;
+        }
+
+        if ($hoursLeft < 24) {
+            return -1; // sentinel for "less than 1 day"
+        }
+
+        return (int) ceil($hoursLeft / 24);
+    }
+
+    public function isTokenLimitReached(): bool
+    {
+        $limit = (int) config('services.launchpad.token_limit', 0);
+
+        if ($limit === 0) {
+            return false;
+        }
+
+        return ($this->total_input_tokens + $this->total_output_tokens) >= $limit;
+    }
+
+    /**
+     * The chat is locked when the support window has expired or the token limit is reached.
+     * Pre-Playbook chats are never locked (window hasn't started yet).
+     */
+    public function isChatLocked(): bool
+    {
+        if (! $this->session_completed_at) {
+            return false;
+        }
+
+        if (! $this->isSupportWindowOpen()) {
+            return true;
+        }
+
+        return $this->isTokenLimitReached();
+    }
+
+    /**
+     * Returns the reason the chat is locked: 'expired', 'tokens', or null.
+     */
+    public function lockReason(): ?string
+    {
+        if (! $this->session_completed_at) {
+            return null;
+        }
+
+        if (! $this->isSupportWindowOpen()) {
+            return 'expired';
+        }
+
+        if ($this->isTokenLimitReached()) {
+            return 'tokens';
+        }
+
+        return null;
+    }
+
+    public function recordTokenUsage(int $inputTokens, int $outputTokens): void
+    {
+        $this->increment('total_input_tokens', $inputTokens);
+        $this->increment('total_output_tokens', $outputTokens);
     }
 }

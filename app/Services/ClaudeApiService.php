@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Assistant;
+use App\Models\PromptSegment;
 use Generator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +14,7 @@ class ClaudeApiService
     private string $apiKey;
     private string $model;
     private int $maxTokens;
+    private array $lastStreamUsage = ['input_tokens' => 0, 'output_tokens' => 0];
 
     public function __construct()
     {
@@ -21,7 +23,10 @@ class ClaudeApiService
         $this->maxTokens = (int) env('CLAUDE_MAX_TOKENS', 4096);
     }
 
-    public function chat(Assistant $task, ?string $userMessage = null): string
+    /**
+     * @return array{text: string, input_tokens: int, output_tokens: int}
+     */
+    public function chat(Assistant $task, ?string $userMessage = null): array
     {
         try {
             $response = Http::withHeaders([
@@ -42,24 +47,36 @@ class ClaudeApiService
                     'task_id' => $task->id,
                 ]);
 
-                return 'Something went wrong. Please try again.';
+                return ['text' => 'Something went wrong. Please try again.', 'input_tokens' => 0, 'output_tokens' => 0];
             }
 
             $data = $response->json();
 
-            return $data['content'][0]['text'] ?? 'Something went wrong. Please try again.';
+            return [
+                'text' => $data['content'][0]['text'] ?? 'Something went wrong. Please try again.',
+                'input_tokens' => $data['usage']['input_tokens'] ?? 0,
+                'output_tokens' => $data['usage']['output_tokens'] ?? 0,
+            ];
         } catch (\Exception $e) {
             Log::error('Claude API exception', [
                 'message' => $e->getMessage(),
                 'task_id' => $task->id,
             ]);
 
-            return 'Something went wrong. Please try again.';
+            return ['text' => 'Something went wrong. Please try again.', 'input_tokens' => 0, 'output_tokens' => 0];
         }
     }
 
+    /**
+     * Stream a chat response, yielding text chunks as they arrive.
+     *
+     * After the generator is exhausted, call getLastStreamUsage() to
+     * retrieve the token counts from the completed stream.
+     */
     public function streamChat(Assistant $task, ?string $userMessage = null): Generator
     {
+        $this->lastStreamUsage = ['input_tokens' => 0, 'output_tokens' => 0];
+
         try {
             $response = Http::withHeaders([
                 'x-api-key' => $this->apiKey,
@@ -118,6 +135,18 @@ class ClaudeApiService
                         && isset($event['delta']['text'])) {
                         yield $event['delta']['text'];
                     }
+
+                    // Capture usage from message_start (input tokens)
+                    if ($event['type'] === 'message_start'
+                        && isset($event['message']['usage'])) {
+                        $this->lastStreamUsage['input_tokens'] = $event['message']['usage']['input_tokens'] ?? 0;
+                    }
+
+                    // Capture usage from message_delta (output tokens)
+                    if ($event['type'] === 'message_delta'
+                        && isset($event['usage'])) {
+                        $this->lastStreamUsage['output_tokens'] = $event['usage']['output_tokens'] ?? 0;
+                    }
                 }
             }
         } catch (\Exception $e) {
@@ -129,8 +158,25 @@ class ClaudeApiService
         }
     }
 
+    /**
+     * Get the token usage from the last completed streamChat() call.
+     *
+     * @return array{input_tokens: int, output_tokens: int}
+     */
+    public function getLastStreamUsage(): array
+    {
+        return $this->lastStreamUsage ?? ['input_tokens' => 0, 'output_tokens' => 0];
+    }
+
     public function getSystemPrompt(Assistant $task): string
     {
+        // Use database-driven prompt segments if available
+        if (PromptSegment::active()->exists()) {
+            $assembler = new PromptAssembler();
+            return $assembler->assemble($task);
+        }
+
+        // Fallback to file-based prompt if no segments in DB
         $prompt = file_get_contents(resource_path('prompts/system_prompt.md'));
 
         if (! $prompt) {

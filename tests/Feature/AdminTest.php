@@ -32,8 +32,8 @@ it('allows authenticated admin to access admin panel', function () {
 });
 
 it('displays dashboard stats correctly', function () {
-    Assistant::factory()->create(['status' => 'completed', 'phase' => 1, 'phase_1_complete' => true]);
-    Assistant::factory()->create(['status' => 'completed', 'phase' => 2, 'phase_1_complete' => true]);
+    Assistant::factory()->create(['status' => 'completed', 'phase' => 1, 'playbook_delivered' => true]);
+    Assistant::factory()->create(['status' => 'completed', 'phase' => 2, 'playbook_delivered' => true]);
     Assistant::factory()->create(['status' => 'active', 'phase' => 1]);
 
     $this->actingAs($this->admin);

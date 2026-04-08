@@ -35,7 +35,7 @@ class ViewAssistant extends ViewRecord
                                 default => 'gray',
                             }),
                         TextEntry::make('phase'),
-                        TextEntry::make('phase_1_complete')
+                        TextEntry::make('playbook_delivered')
                             ->label('Phase 1 Complete')
                             ->formatStateUsing(fn (bool $state): string => $state ? 'Yes' : 'No'),
                         TextEntry::make('created_at')->dateTime('M j, Y g:ia'),

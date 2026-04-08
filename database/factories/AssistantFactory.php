@@ -20,7 +20,12 @@ class AssistantFactory extends Factory
             'email' => fake()->safeEmail(),
             'status' => 'pending',
             'phase' => 1,
-            'phase_1_complete' => false,
+            'playbook_delivered' => false,
+            'in_post_playbook' => false,
+            'session_completed_at' => null,
+            'fast_track_nudge_count' => 0,
+            'total_input_tokens' => 0,
+            'total_output_tokens' => 0,
         ];
     }
 
@@ -32,5 +37,25 @@ class AssistantFactory extends Factory
     public function completed(): static
     {
         return $this->state(['status' => 'completed']);
+    }
+
+    public function postPlaybook(): static
+    {
+        return $this->state([
+            'status' => 'completed',
+            'playbook_delivered' => true,
+            'in_post_playbook' => true,
+            'session_completed_at' => now(),
+        ]);
+    }
+
+    public function expiredSupport(): static
+    {
+        return $this->state([
+            'status' => 'completed',
+            'playbook_delivered' => true,
+            'in_post_playbook' => true,
+            'session_completed_at' => now()->subDays(8),
+        ]);
     }
 }

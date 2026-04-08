@@ -116,7 +116,7 @@ class TestDataSeeder extends Seeder
             'email' => 'margaret.thompson@iinet.net.au',
             'status' => 'completed',
             'phase' => 1,
-            'phase_1_complete' => true,
+            'playbook_delivered' => true,
             'assistant_name' => 'Proposal Writer',
             'bottleneck_summary' => 'Drafting consulting proposals from brief notes and past templates',
             'user_id' => null,
@@ -132,7 +132,7 @@ class TestDataSeeder extends Seeder
             'email' => 'ross.patterson@optusnet.com.au',
             'status' => 'active',
             'phase' => 1,
-            'phase_1_complete' => false,
+            'playbook_delivered' => false,
             'user_id' => null,
             'created_at' => now()->subDays(25),
         ]);
@@ -149,7 +149,7 @@ class TestDataSeeder extends Seeder
             'email' => $user->email,
             'status' => 'completed',
             'phase' => 1,
-            'phase_1_complete' => true,
+            'playbook_delivered' => true,
             'user_id' => $user->id,
         ], $taskAttrs));
 
@@ -166,7 +166,7 @@ class TestDataSeeder extends Seeder
             'email' => $user->email,
             'status' => 'active',
             'phase' => 1,
-            'phase_1_complete' => false,
+            'playbook_delivered' => false,
             'user_id' => $user->id,
         ], $taskAttrs));
 
