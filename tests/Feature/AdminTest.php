@@ -129,19 +129,17 @@ it('allows admin to edit buyer name and email', function () {
         ->and($task->email)->toBe('new@example.com');
 });
 
-it('marks instruction sheet messages in task detail', function () {
+it('marks deliverable messages in task detail', function () {
     $task = Assistant::factory()->active()->create();
 
-    Chat::factory()->create([
+    Chat::factory()->deliverable()->create([
         'task_id' => $task->id,
-        'role' => 'assistant',
-        'content' => 'Here is your instruction sheet',
-        'is_instruction_sheet' => true,
+        'content' => 'Here is your Playbook',
     ]);
 
     $this->actingAs($this->admin);
 
     Livewire::test(ViewAssistant::class, ['record' => $task->getRouteKey()])
-        ->assertSee('Instruction Sheet')
-        ->assertSee('Here is your instruction sheet');
+        ->assertSee('Playbook')
+        ->assertSee('Here is your Playbook');
 });

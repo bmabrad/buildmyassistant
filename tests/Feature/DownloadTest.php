@@ -18,66 +18,75 @@ beforeEach(function () {
     app()->instance(ClaudeApiService::class, $mock);
 });
 
-it('downloads instruction sheet as text file', function () {
-    $task = Assistant::factory()->active()->create();
+it('downloads assistant instructions as markdown file', function () {
+    $task = Assistant::factory()->active()->create(['name' => 'Sarah Jones']);
 
-    Chat::factory()->create([
+    Chat::factory()->deliverable()->create([
         'task_id' => $task->id,
-        'role' => 'assistant',
-        'content' => '# My Assistant Instructions',
-        'is_instruction_sheet' => true,
+        'instructions_content' => '# Sarah — AI Assistant for Test Client',
     ]);
 
-    $response = $this->get("/launchpad/{$task->token}/instructions.txt");
+    $response = $this->get("/launchpad/{$task->token}/instructions.md");
 
     $response->assertStatus(200)
-        ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
-        ->assertHeader('Content-Disposition', 'attachment; filename="your-assistant-instructions.txt"');
+        ->assertHeader('Content-Type', 'text/markdown; charset=utf-8');
 
-    expect($response->getContent())->toBe('# My Assistant Instructions');
+    expect($response->getContent())->toBe('# Sarah — AI Assistant for Test Client');
 });
 
-it('returns the most recent instruction sheet', function () {
-    $task = Assistant::factory()->active()->create();
+it('returns the most recent deliverable for instructions download', function () {
+    $task = Assistant::factory()->active()->create(['name' => 'Test User']);
 
-    Chat::factory()->create([
+    Chat::factory()->deliverable()->create([
         'task_id' => $task->id,
-        'role' => 'assistant',
-        'content' => 'Phase 1 sheet',
-        'is_instruction_sheet' => true,
+        'instructions_content' => 'Phase 1 instructions',
         'created_at' => now()->subMinutes(5),
     ]);
 
-    Chat::factory()->create([
+    Chat::factory()->deliverable()->create([
         'task_id' => $task->id,
-        'role' => 'assistant',
-        'content' => 'Phase 2 sheet (updated)',
-        'is_instruction_sheet' => true,
+        'instructions_content' => 'Phase 2 instructions (updated)',
         'created_at' => now(),
     ]);
 
-    $response = $this->get("/launchpad/{$task->token}/instructions.txt");
+    $response = $this->get("/launchpad/{$task->token}/instructions.md");
 
-    expect($response->getContent())->toBe('Phase 2 sheet (updated)');
+    expect($response->getContent())->toBe('Phase 2 instructions (updated)');
 });
 
-it('returns 404 when no instruction sheet exists', function () {
+it('falls back to full content when instructions_content is null', function () {
+    $task = Assistant::factory()->active()->create(['name' => 'Test User']);
+
+    Chat::factory()->create([
+        'task_id' => $task->id,
+        'role' => 'assistant',
+        'content' => 'Full deliverable content as fallback',
+        'is_deliverable' => true,
+        'instructions_content' => null,
+    ]);
+
+    $response = $this->get("/launchpad/{$task->token}/instructions.md");
+
+    expect($response->getContent())->toBe('Full deliverable content as fallback');
+});
+
+it('returns 404 when no deliverable exists for instructions', function () {
     $task = Assistant::factory()->active()->create();
 
     Chat::factory()->create([
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Just a regular message',
-        'is_instruction_sheet' => false,
+        'is_deliverable' => false,
     ]);
 
-    $response = $this->get("/launchpad/{$task->token}/instructions.txt");
+    $response = $this->get("/launchpad/{$task->token}/instructions.md");
 
     $response->assertStatus(404);
 });
 
 it('returns 404 for invalid token on download', function () {
-    $response = $this->get('/launchpad/invalid-token/instructions.txt');
+    $response = $this->get('/launchpad/invalid-token/instructions.md');
 
     $response->assertStatus(404);
 });

@@ -126,10 +126,16 @@ class LaunchpadChat extends Component
             $this->task->recordTokenUsage($usage['input_tokens'], $usage['output_tokens']);
         }
 
-        // Detect and handle instruction sheet marker
-        $isInstructionSheet = $this->detectInstructionSheet($fullResponse);
-        if ($isInstructionSheet) {
-            $fullResponse = $this->stripInstructionSheetMarker($fullResponse);
+        // Detect and handle deliverable marker
+        $isDeliverable = $this->detectDeliverable($fullResponse);
+        if ($isDeliverable) {
+            $fullResponse = $this->stripDeliverableMarker($fullResponse);
+        }
+
+        // Parse deliverable content into separate Playbook and Instructions sections
+        $deliverableData = [];
+        if ($isDeliverable) {
+            $deliverableData = $this->parseDeliverableContent($fullResponse);
         }
 
         // Store the complete response
@@ -137,11 +143,13 @@ class LaunchpadChat extends Component
             'role' => 'assistant',
             'content' => $fullResponse,
             'phase' => $this->task->phase,
-            'is_instruction_sheet' => $isInstructionSheet,
+            'is_deliverable' => $isDeliverable,
+            'playbook_content' => $deliverableData['playbook_content'] ?? null,
+            'instructions_content' => $deliverableData['instructions_content'] ?? null,
         ]);
 
         // Handle Playbook delivery: set session_completed_at and transition to Post-Playbook
-        if ($isInstructionSheet && ! $this->task->playbook_delivered) {
+        if ($isDeliverable && ! $this->task->playbook_delivered) {
             $this->task->update([
                 'playbook_delivered' => true,
                 'in_post_playbook' => true,
@@ -160,14 +168,54 @@ class LaunchpadChat extends Component
         $this->dispatch('response-complete');
     }
 
-    public static function detectInstructionSheet(string $content): bool
+    public static function detectDeliverable(string $content): bool
     {
         return str_contains($content, '<!-- INSTRUCTION_SHEET -->');
     }
 
-    public static function stripInstructionSheetMarker(string $content): string
+    public static function stripDeliverableMarker(string $content): string
     {
         return trim(str_replace('<!-- INSTRUCTION_SHEET -->', '', $content));
+    }
+
+    /**
+     * Parse the deliverable message into separate Playbook and Instructions sections.
+     *
+     * The guide outputs both in one message, separated by a marker like:
+     * <!-- INSTRUCTIONS_START -->
+     * If no marker is found, the full content is treated as the Playbook
+     * and instructions_content is left null.
+     */
+    public static function parseDeliverableContent(string $content): array
+    {
+        $marker = '<!-- INSTRUCTIONS_START -->';
+
+        if (str_contains($content, $marker)) {
+            [$playbook, $instructions] = explode($marker, $content, 2);
+
+            return [
+                'playbook_content' => trim($playbook),
+                'instructions_content' => trim($instructions),
+            ];
+        }
+
+        // Fallback: try to split on the assistant instructions heading pattern
+        // e.g. "## Assistant Instructions" or "# [Name] — AI Assistant for [Client]"
+        $pattern = '/\n(?=#+\s+.*(?:Assistant Instructions|AI Assistant for))/i';
+        $parts = preg_split($pattern, $content, 2);
+
+        if (count($parts) === 2) {
+            return [
+                'playbook_content' => trim($parts[0]),
+                'instructions_content' => trim($parts[1]),
+            ];
+        }
+
+        // Cannot split — store full content as playbook, instructions null
+        return [
+            'playbook_content' => trim($content),
+            'instructions_content' => null,
+        ];
     }
 
     public function render()

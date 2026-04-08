@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assistant;
-use App\Services\InstructionSheetPdfService;
+use App\Services\PlaybookPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Cashier\Checkout;
@@ -76,55 +76,38 @@ class LaunchpadController extends Controller
         return view('launchpad.chat', ['task' => $task]);
     }
 
-    public function downloadInstructions(Request $request, string $token)
+    public function downloadPlaybookPdf(Request $request, string $token)
     {
         $task = $request->attributes->get('launchpad_task');
+        $deliverable = $this->findDeliverable($task, $request->query('message'));
 
-        $instructionSheet = $task->chats()
-            ->where('is_instruction_sheet', true)
-            ->reorder()
-            ->latest('id')
-            ->first();
-
-        if (! $instructionSheet) {
+        if (! $deliverable) {
             abort(404);
         }
 
-        return response($instructionSheet->content, 200, [
-            'Content-Type' => 'text/plain',
-            'Content-Disposition' => 'attachment; filename="your-assistant-instructions.txt"',
-        ]);
+        $pdfService = app(PlaybookPdfService::class);
+
+        return $pdfService->download($task, $deliverable);
     }
 
-    public function downloadInstructionsPdf(Request $request, string $token)
+    public function downloadInstructionsMd(Request $request, string $token)
     {
         $task = $request->attributes->get('launchpad_task');
+        $deliverable = $this->findDeliverable($task, $request->query('message'));
 
-        // Support downloading a specific instruction sheet by message ID
-        $messageId = $request->query('message');
-
-        if ($messageId) {
-            $instructionSheet = $task->chats()
-                ->where('id', $messageId)
-                ->where('is_instruction_sheet', true)
-                ->first();
-        } else {
-            $instructionSheet = $task->chats()
-                ->where('is_instruction_sheet', true)
-                ->reorder()
-                ->latest('id')
-                ->first();
-        }
-
-        if (! $instructionSheet) {
+        if (! $deliverable) {
             abort(404);
         }
 
-        $pdfService = app(InstructionSheetPdfService::class);
-        $pdf = $pdfService->generate($task, $instructionSheet->content);
-        $filename = $pdfService->filename($task);
+        // Use the parsed instructions_content if available, otherwise fall back to full content
+        $content = $deliverable->instructions_content ?? $deliverable->content;
+        $name = $task->name ?? 'Customer';
+        $filename = $name . ' - Assistant Instructions.md';
 
-        return $pdf->download($filename);
+        return response($content, 200, [
+            'Content-Type' => 'text/markdown; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     public function downloadChat(Request $request, string $token)
@@ -143,6 +126,22 @@ class LaunchpadController extends Controller
             'Content-Type' => 'text/plain',
             'Content-Disposition' => 'attachment; filename="launchpad-chat.txt"',
         ]);
+    }
+
+    private function findDeliverable(Assistant $task, ?string $messageId): ?\App\Models\Chat
+    {
+        if ($messageId) {
+            return $task->chats()
+                ->where('id', $messageId)
+                ->where('is_deliverable', true)
+                ->first();
+        }
+
+        return $task->chats()
+            ->where('is_deliverable', true)
+            ->reorder()
+            ->latest('id')
+            ->first();
     }
 
     private function findTaskForSession(string $sessionId): ?Assistant

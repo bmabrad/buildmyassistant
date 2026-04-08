@@ -13,11 +13,15 @@ class PromptBuilderController extends Controller
 {
     public function index()
     {
+        abort_unless(request()->user()?->is_admin, 403);
+
         return view('admin.prompt-builder');
     }
 
     public function chat(Request $request): JsonResponse
     {
+        abort_unless($request->user()?->is_admin, 403);
+
         $request->validate([
             'message' => 'required|string|max:5000',
             'history' => 'nullable|array',

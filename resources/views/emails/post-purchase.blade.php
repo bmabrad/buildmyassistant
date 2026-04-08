@@ -30,7 +30,7 @@
                             </p>
 
                             <p style="margin: 0 0 24px;">
-                                You can start any time — your session won't expire.
+                                You can start any time. Your session won't expire.
                             </p>
 
                             {{-- CTA button --}}

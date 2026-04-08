@@ -17,7 +17,9 @@ class ChatFactory extends Factory
             'role' => fake()->randomElement(['user', 'assistant']),
             'content' => fake()->paragraph(),
             'phase' => 1,
-            'is_instruction_sheet' => false,
+            'is_deliverable' => false,
+            'playbook_content' => null,
+            'instructions_content' => null,
         ];
     }
 
@@ -31,11 +33,21 @@ class ChatFactory extends Factory
         return $this->state(['role' => 'assistant']);
     }
 
-    public function instructionSheet(): static
+    public function deliverable(): static
     {
         return $this->state([
             'role' => 'assistant',
-            'is_instruction_sheet' => true,
+            'is_deliverable' => true,
+            'playbook_content' => "## 1. Your Bottleneck\nTest bottleneck content.\n\n## 2. Your Process Map\nTest process map.",
+            'instructions_content' => "# Test Assistant — AI Assistant for Test Client\n\n## Role\nYou are Test Assistant.",
         ]);
+    }
+
+    /**
+     * @deprecated Use deliverable() instead
+     */
+    public function instructionSheet(): static
+    {
+        return $this->deliverable();
     }
 }

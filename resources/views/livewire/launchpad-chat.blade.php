@@ -52,33 +52,58 @@
             >
                 @foreach ($messages as $message)
                     <div style="display: flex; justify-content: {{ $message->role === 'user' ? 'flex-end' : 'flex-start' }};">
-                        <div class="chat-bubble {{ $message->role === 'user' ? 'chat-bubble-user' : 'chat-bubble-assistant' }} {{ $message->is_instruction_sheet ? 'chat-bubble-instructions' : '' }}">
-                            @if ($message->role === 'assistant')
-                                <div class="prose">{!! Str::markdown($message->content) !!}</div>
+                        @if ($message->is_deliverable)
+                            {{-- Deliverable: concise card with downloads and install instructions --}}
+                            <div class="chat-bubble chat-bubble-assistant chat-bubble-deliverable">
+                                <div class="prose">
+                                    <p>Your Playbook for <strong>{{ $task->assistant_name ?? 'your assistant' }}</strong> is ready. It covers your bottleneck, process map, how your assistant works, and what happens next.</p>
+                                </div>
 
-                                @if ($message->is_instruction_sheet)
-                                    <div class="instruction-actions">
-                                        <button
-                                            x-data="{ copied: false }"
-                                            x-on:click="
-                                                navigator.clipboard.writeText(@js($message->content));
-                                                copied = true;
-                                                setTimeout(() => copied = false, 2000);
-                                            "
-                                            x-text="copied ? 'Copied!' : 'Copy instructions'"
-                                            class="instruction-btn instruction-btn-outline"
-                                        ></button>
-                                        <a
-                                            href="/launchpad/{{ $task->token }}/instructions.pdf?message={{ $message->id }}"
-                                            download
-                                            class="instruction-btn instruction-btn-primary"
-                                        >Download your instruction sheet</a>
-                                    </div>
-                                @endif
-                            @else
+                                <a
+                                    href="/launchpad/{{ $task->token }}/playbook.pdf?message={{ $message->id }}"
+                                    download
+                                    class="instruction-btn instruction-btn-primary"
+                                    style="display: inline-block; margin-top: 12px;"
+                                >Download Playbook</a>
+
+                                <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15);">
+                                    <p style="margin: 0 0 8px; font-weight: 500;">Assistant Install Instructions</p>
+                                    <ol style="margin: 0; padding-left: 20px; line-height: 1.8; list-style-type: decimal;">
+                                        <li>Download the instruction file below</li>
+                                        <li>Open Claude CoWork</li>
+                                        <li>Create a new project called "{{ $task->assistant_name ?? 'Your Assistant' }}"</li>
+                                        <li>Upload the file to the project</li>
+                                        <li>Type in "Let's get started"</li>
+                                    </ol>
+                                </div>
+
+                                <div class="instruction-actions">
+                                    <a
+                                        href="/launchpad/{{ $task->token }}/instructions.md?message={{ $message->id }}"
+                                        download
+                                        class="instruction-btn instruction-btn-primary"
+                                    >Download AssistantInstructions.md</a>
+                                    <button
+                                        x-data="{ copied: false }"
+                                        x-on:click="
+                                            navigator.clipboard.writeText(@js($message->instructions_content ?? $message->content));
+                                            copied = true;
+                                            setTimeout(() => copied = false, 2000);
+                                        "
+                                        x-text="copied ? 'Copied!' : 'Copy instructions'"
+                                        class="instruction-btn instruction-btn-outline"
+                                    ></button>
+                                </div>
+                            </div>
+                        @elseif ($message->role === 'assistant')
+                            <div class="chat-bubble chat-bubble-assistant">
+                                <div class="prose">{!! Str::markdown($message->content) !!}</div>
+                            </div>
+                        @else
+                            <div class="chat-bubble chat-bubble-user">
                                 {{ $message->content }}
-                            @endif
-                        </div>
+                            </div>
+                        @endif
                     </div>
                 @endforeach
 
@@ -180,11 +205,11 @@
                 </div>
                 <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
                     <span class="sidebar-step-num">4</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Download your instruction sheet with everything ready to go</p>
+                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Download your Playbook and assistant instructions</p>
                 </div>
                 <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
                     <span class="sidebar-step-num">5</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Get your Playbook and 7 days of support</p>
+                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">7 days of support to get you up and running</p>
                 </div>
             </div>
 
@@ -309,8 +334,9 @@
             border-radius: 1rem 1rem 1rem 0.25rem;
         }
 
-        .chat-bubble-instructions {
+        .chat-bubble-deliverable {
             border-left: 4px solid var(--sage-accent);
+            max-width: 90%;
         }
 
         .instruction-actions {
@@ -335,6 +361,11 @@
 
         .instruction-btn-primary {
             background: var(--sage-accent);
+            color: white;
+        }
+
+        .instruction-btn-secondary {
+            background: var(--deep-slate);
             color: white;
         }
 

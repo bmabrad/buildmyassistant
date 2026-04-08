@@ -82,7 +82,7 @@ class DashboardController extends Controller
         }
 
         try {
-            $user->charge(500, $user->defaultPaymentMethod()->id, [
+            $user->charge(700, $user->defaultPaymentMethod()->id, [
                 'currency' => 'aud',
                 'description' => 'AI Assistant Launchpad — Build My Assistant',
                 'return_url' => route('dashboard'),

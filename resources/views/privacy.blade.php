@@ -40,8 +40,8 @@
                 We share your information only with the following third parties, solely to deliver our service:
             </p>
             <ul class="mb-4 pl-5 list-disc">
-                <li><strong class="font-medium text-slate">Stripe</strong> — processes your payment. Stripe's privacy policy applies to payment data.</li>
-                <li><strong class="font-medium text-slate">Anthropic</strong> — provides the AI that powers your chat session. Your chat messages are sent to Anthropic's API to generate responses.</li>
+                <li><strong class="font-medium text-slate">Stripe</strong>, processes your payment. Stripe's privacy policy applies to payment data.</li>
+                <li><strong class="font-medium text-slate">Anthropic</strong>, provides the AI that powers your chat session. Your chat messages are sent to Anthropic's API to generate responses.</li>
             </ul>
             <p class="mb-4">
                 We do not sell your personal information to anyone.

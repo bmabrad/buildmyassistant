@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your AI assistant instructions are ready</title>
+    <title>Your AI Assistant Playbook is ready</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #F4F6F4; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #3D5A73; font-size: 15px; line-height: 1.7;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F4F6F4;">
@@ -22,7 +22,7 @@
                     <tr>
                         <td style="padding: 32px;">
                             <p style="margin: 0 0 20px; color: #1E2A38; font-size: 17px; font-weight: 500; line-height: 1.4;">
-                                Hi {{ $buyerName }}, your instructions are ready.
+                                Hi {{ $buyerName }}, your Playbook is ready.
                             </p>
 
                             <p style="margin: 0 0 20px;">
@@ -30,7 +30,7 @@
                             </p>
 
                             <p style="margin: 0 0 12px;">
-                                You can copy or download your instructions from the chat any time.
+                                You can download your Playbook and assistant instructions from the chat any time.
                             </p>
 
                             <p style="margin: 0 0 24px;">
@@ -41,7 +41,7 @@
                             <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
                                 <tr>
                                     <td style="background-color: #7AA08A; border-radius: 6px;">
-                                        <a href="{{ $chatUrl }}" style="display: inline-block; padding: 12px 28px; color: #ffffff; font-size: 15px; font-weight: 500; text-decoration: none; letter-spacing: 0.01em;">View your instructions</a>
+                                        <a href="{{ $chatUrl }}" style="display: inline-block; padding: 12px 28px; color: #ffffff; font-size: 15px; font-weight: 500; text-decoration: none; letter-spacing: 0.01em;">View your Playbook</a>
                                     </td>
                                 </tr>
                             </table>

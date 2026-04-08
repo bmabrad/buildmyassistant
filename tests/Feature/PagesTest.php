@@ -30,7 +30,7 @@ it('has nav links to all main pages', function () {
     $response = $this->get('/');
 
     $response->assertSee('href="/launchpad"', false);
-    $response->assertSee('href="/blog"', false);
+    $response->assertSee('href="/articles"', false);
     $response->assertSee('href="/about"', false);
     $response->assertSee('href="/contact"', false);
 });
@@ -42,11 +42,11 @@ it('has footer links to privacy and terms', function () {
     $response->assertSee('href="/terms"', false);
 });
 
-it('loads the blog index page', function () {
-    $this->get('/blog')->assertStatus(200)->assertSee('Blog');
+it('loads the articles index page', function () {
+    $this->get('/articles')->assertStatus(200)->assertSee('Articles');
 });
 
-it('shows published blog posts on the index', function () {
+it('shows published articles on the index', function () {
     Article::create([
         'title' => 'Test Published Post',
         'slug' => 'test-published-post',
@@ -63,12 +63,12 @@ it('shows published blog posts on the index', function () {
         'published_at' => null,
     ]);
 
-    $this->get('/blog')
+    $this->get('/articles')
         ->assertSee('Test Published Post')
         ->assertDontSee('Draft Post');
 });
 
-it('shows a single blog post by slug', function () {
+it('shows a single article by slug', function () {
     Article::create([
         'title' => 'My Blog Post',
         'slug' => 'my-blog-post',
@@ -77,13 +77,13 @@ it('shows a single blog post by slug', function () {
         'published_at' => now()->subDay(),
     ]);
 
-    $this->get('/blog/my-blog-post')
+    $this->get('/articles/my-blog-post')
         ->assertStatus(200)
         ->assertSee('My Blog Post')
         ->assertSee('Full blog content here.');
 });
 
-it('returns 404 for unpublished blog post', function () {
+it('returns 404 for unpublished article', function () {
     Article::create([
         'title' => 'Hidden Post',
         'slug' => 'hidden-post',
@@ -92,10 +92,10 @@ it('returns 404 for unpublished blog post', function () {
         'published_at' => null,
     ]);
 
-    $this->get('/blog/hidden-post')->assertStatus(404);
+    $this->get('/articles/hidden-post')->assertStatus(404);
 });
 
-it('returns 404 for future blog post', function () {
+it('returns 404 for future article', function () {
     Article::create([
         'title' => 'Future Post',
         'slug' => 'future-post',
@@ -104,10 +104,10 @@ it('returns 404 for future blog post', function () {
         'published_at' => now()->addWeek(),
     ]);
 
-    $this->get('/blog/future-post')->assertStatus(404);
+    $this->get('/articles/future-post')->assertStatus(404);
 });
 
-it('serves the blog RSS feed', function () {
+it('serves the articles RSS feed', function () {
     Article::create([
         'title' => 'RSS Post',
         'slug' => 'rss-post',
@@ -116,7 +116,7 @@ it('serves the blog RSS feed', function () {
         'published_at' => now()->subDay(),
     ]);
 
-    $this->get('/blog/feed')
+    $this->get('/articles/feed')
         ->assertStatus(200)
         ->assertHeader('Content-Type', 'application/rss+xml')
         ->assertSee('RSS Post');

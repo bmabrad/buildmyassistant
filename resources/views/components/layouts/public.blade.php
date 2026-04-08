@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'Build My Assistant' }}</title>
-    <meta name="description" content="{{ $description ?? 'Custom AI assistants for coaches and consultants. Built around your business, your voice, and the way you work.' }}">
+    <meta name="description" content="{{ $description ?? 'Custom AI assistants for your business. Built around how you actually work.' }}">
 
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <link rel="alternate" type="application/rss+xml" title="Build My Assistant Blog" href="/blog/feed">
+    <link rel="alternate" type="application/rss+xml" title="Build My Assistant Articles" href="/articles/feed">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,13 +20,18 @@
 </head>
 <body class="font-sans text-[15px] font-normal leading-[1.7] text-mid-blue bg-white">
     {{-- Nav --}}
-    <nav class="max-w-[1000px] mx-auto px-6 bg-slate py-4">
+    <nav class="max-w-[1000px] mx-auto px-6 bg-slate py-4" x-data="{ mobileOpen: false }">
         <div class="flex items-center justify-between">
             <a href="/" class="text-lg font-medium text-white no-underline">Build My Assistant<span class="text-sage">.co</span></a>
-            <button class="nav-toggle md:hidden text-white" onclick="document.getElementById('nav-links').classList.toggle('hidden')" aria-label="Toggle navigation">
-                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+
+            {{-- Mobile hamburger --}}
+            <button class="md:hidden text-white" @click="mobileOpen = !mobileOpen" aria-label="Toggle navigation">
+                <svg x-show="!mobileOpen" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                <svg x-show="mobileOpen" x-cloak class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <div id="nav-links" class="hidden md:flex gap-6 items-center">
+
+            {{-- Desktop nav --}}
+            <div class="hidden md:flex gap-6 items-center">
                 <a href="/launchpad" class="text-soft-sage text-sm no-underline hover:text-white">Start Here</a>
                 <div class="relative" x-data="{ open: false }" @click.outside="open = false">
                     <button @click="open = !open" class="text-soft-sage text-sm hover:text-white flex items-center gap-1">
@@ -35,7 +40,7 @@
                     </button>
                     <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-36 bg-slate border border-soft-sage/20 rounded-md shadow-lg py-1 z-50">
                         <a href="/about" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">About</a>
-                        <a href="/blog" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Articles</a>
+                        <a href="/articles" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Articles</a>
                         <a href="/contact" class="block px-4 py-2 text-soft-sage text-sm no-underline hover:text-white hover:bg-white/5">Contact</a>
                     </div>
                 </div>
@@ -69,6 +74,36 @@
                     <a href="/login" class="w-8 h-8 rounded-full border border-soft-sage/40 text-soft-sage flex items-center justify-center hover:text-white hover:border-white/40 transition-colors no-underline" title="Log in">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </a>
+                @endauth
+            </div>
+        </div>
+
+        {{-- Mobile nav --}}
+        <div x-show="mobileOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" class="md:hidden mt-4 pt-4 border-t border-soft-sage/20">
+            <div class="flex flex-col gap-3">
+                <a href="/launchpad" class="text-soft-sage text-sm no-underline hover:text-white">Start Here</a>
+                <a href="/about" class="text-soft-sage text-sm no-underline hover:text-white">About</a>
+                <a href="/articles" class="text-soft-sage text-sm no-underline hover:text-white">Articles</a>
+                <a href="/contact" class="text-soft-sage text-sm no-underline hover:text-white">Contact</a>
+                @auth
+                    <div class="border-t border-soft-sage/20 pt-3 mt-1">
+                        <a href="/dashboard" class="block text-soft-sage text-sm no-underline hover:text-white mb-3">Dashboard</a>
+                        <a href="/settings" class="block text-soft-sage text-sm no-underline hover:text-white mb-3">Settings</a>
+                        @if(session()->has('impersonating_from'))
+                            <span class="block text-soft-sage/40 text-sm cursor-not-allowed mb-3" title="Not available while impersonating">Billing</span>
+                        @else
+                            <form method="POST" action="/dashboard/billing">
+                                @csrf
+                                <button type="submit" class="text-soft-sage text-sm hover:text-white mb-3">Billing</button>
+                            </form>
+                        @endif
+                        <form method="POST" action="/logout">
+                            @csrf
+                            <button type="submit" class="text-soft-sage text-sm hover:text-white">Log out</button>
+                        </form>
+                    </div>
+                @else
+                    <a href="/login" class="text-soft-sage text-sm no-underline hover:text-white">Log in</a>
                 @endauth
             </div>
         </div>

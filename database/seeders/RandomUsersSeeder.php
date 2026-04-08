@@ -174,7 +174,7 @@ class RandomUsersSeeder extends Seeder
                 'role' => $role,
                 'content' => $content,
                 'phase' => 1,
-                'is_instruction_sheet' => $isSheet,
+                'is_deliverable' => $isSheet,
                 'created_at' => $baseTime->copy()->addMinutes($i * rand(1, 4)),
             ]);
         }

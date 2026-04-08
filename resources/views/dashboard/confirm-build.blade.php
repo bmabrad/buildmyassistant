@@ -23,7 +23,7 @@
             <div class="bg-white border border-soft-sage rounded-lg p-6">
                 <div class="flex items-center justify-between mb-4">
                     <span class="text-slate font-medium">AI Assistant Launchpad</span>
-                    <span class="text-slate font-medium">$5 AUD</span>
+                    <span class="text-slate font-medium">$7 AUD</span>
                 </div>
 
                 <p class="text-mid-blue text-sm mb-6">
@@ -33,7 +33,7 @@
                 <form method="POST" action="/dashboard/new-build">
                     @csrf
                     <button type="submit" class="w-full bg-sage text-white text-[15px] font-medium py-2.5 rounded-md hover:opacity-90 transition-opacity" style="margin-bottom: 1em;">
-                        Confirm — $5 AUD
+                        Confirm — $7 AUD
                     </button>
                 </form>
 

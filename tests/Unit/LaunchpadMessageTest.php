@@ -34,10 +34,20 @@ it('returns claude format for assistant role', function () {
     ]);
 });
 
-it('casts is_instruction_sheet to boolean', function () {
-    $message = Chat::factory()->create(['is_instruction_sheet' => true]);
+it('casts is_deliverable to boolean', function () {
+    $message = Chat::factory()->create(['is_deliverable' => true]);
 
-    expect($message->is_instruction_sheet)->toBeBool()->toBeTrue();
+    expect($message->is_deliverable)->toBeBool()->toBeTrue();
+});
+
+it('stores playbook_content and instructions_content separately', function () {
+    $message = Chat::factory()->deliverable()->create([
+        'playbook_content' => 'Playbook here',
+        'instructions_content' => 'Instructions here',
+    ]);
+
+    expect($message->playbook_content)->toBe('Playbook here')
+        ->and($message->instructions_content)->toBe('Instructions here');
 });
 
 it('auto-sets created_at on creation', function () {

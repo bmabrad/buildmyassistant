@@ -2,38 +2,38 @@
 
 use App\Livewire\LaunchpadChat;
 
-it('detects instruction sheet marker in content', function () {
-    $content = "Here is your instruction sheet\n\n<!-- INSTRUCTION_SHEET -->";
+it('detects deliverable marker in content', function () {
+    $content = "Here is your Playbook\n\n<!-- INSTRUCTION_SHEET -->";
 
-    expect(LaunchpadChat::detectInstructionSheet($content))->toBeTrue();
+    expect(LaunchpadChat::detectDeliverable($content))->toBeTrue();
 });
 
 it('does not detect marker when absent', function () {
     $content = "Just a regular message with no marker.";
 
-    expect(LaunchpadChat::detectInstructionSheet($content))->toBeFalse();
+    expect(LaunchpadChat::detectDeliverable($content))->toBeFalse();
 });
 
 it('detects marker in the middle of content', function () {
     $content = "Some content <!-- INSTRUCTION_SHEET --> more content";
 
-    expect(LaunchpadChat::detectInstructionSheet($content))->toBeTrue();
+    expect(LaunchpadChat::detectDeliverable($content))->toBeTrue();
 });
 
 it('strips marker from content', function () {
-    $content = "Here is your instruction sheet\n\n<!-- INSTRUCTION_SHEET -->";
+    $content = "Here is your Playbook\n\n<!-- INSTRUCTION_SHEET -->";
 
-    $stripped = LaunchpadChat::stripInstructionSheetMarker($content);
+    $stripped = LaunchpadChat::stripDeliverableMarker($content);
 
     expect($stripped)
-        ->toBe("Here is your instruction sheet")
+        ->toBe("Here is your Playbook")
         ->not->toContain('<!-- INSTRUCTION_SHEET -->');
 });
 
 it('strips marker from middle of content', function () {
     $content = "Before <!-- INSTRUCTION_SHEET --> After";
 
-    $stripped = LaunchpadChat::stripInstructionSheetMarker($content);
+    $stripped = LaunchpadChat::stripDeliverableMarker($content);
 
     expect($stripped)->toBe("Before  After");
 });
@@ -41,7 +41,27 @@ it('strips marker from middle of content', function () {
 it('returns content unchanged when no marker present', function () {
     $content = "No marker here.";
 
-    $stripped = LaunchpadChat::stripInstructionSheetMarker($content);
+    $stripped = LaunchpadChat::stripDeliverableMarker($content);
 
     expect($stripped)->toBe("No marker here.");
+});
+
+it('parses deliverable content using INSTRUCTIONS_START marker', function () {
+    $content = "## 1. Your Bottleneck\nContent here\n\n<!-- INSTRUCTIONS_START -->\n\n# Sarah — AI Assistant\n\n## Role\nYou are Sarah.";
+
+    $result = LaunchpadChat::parseDeliverableContent($content);
+
+    expect($result['playbook_content'])->toContain('Your Bottleneck')
+        ->and($result['playbook_content'])->not->toContain('# Sarah')
+        ->and($result['instructions_content'])->toContain('# Sarah — AI Assistant')
+        ->and($result['instructions_content'])->toContain('## Role');
+});
+
+it('falls back to full content as playbook when no split marker found', function () {
+    $content = "Just a single block of content with no markers.";
+
+    $result = LaunchpadChat::parseDeliverableContent($content);
+
+    expect($result['playbook_content'])->toBe($content)
+        ->and($result['instructions_content'])->toBeNull();
 });

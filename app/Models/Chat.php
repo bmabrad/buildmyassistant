@@ -20,13 +20,15 @@ class Chat extends Model
         'role',
         'content',
         'phase',
-        'is_instruction_sheet',
+        'is_deliverable',
+        'playbook_content',
+        'instructions_content',
         'created_at',
     ];
 
     protected $casts = [
         'phase' => 'integer',
-        'is_instruction_sheet' => 'boolean',
+        'is_deliverable' => 'boolean',
         'created_at' => 'datetime',
     ];
 

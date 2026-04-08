@@ -113,9 +113,10 @@ it('email contains buyer name and chat link', function () use ($instructionSheet
         'email' => 'brad@example.com',
     ]);
 
-    Chat::factory()->instructionSheet()->create([
+    Chat::factory()->deliverable()->create([
         'task_id' => $task->id,
         'content' => $instructionSheetContent,
+        'playbook_content' => $instructionSheetContent,
     ]);
 
     $mail = new LaunchpadCompletionMail($task);
@@ -131,7 +132,7 @@ it('email has correct subject line', function () {
 
     $mail = new LaunchpadCompletionMail($task);
 
-    expect($mail->envelope()->subject)->toBe('Your AI assistant instructions are ready');
+    expect($mail->envelope()->subject)->toBe('Your AI Assistant Playbook is ready');
 });
 
 it('extracts assistant name from different markdown formats', function () {
@@ -163,9 +164,10 @@ it('renders the email template without errors', function () use ($instructionShe
         'name' => 'Brad',
     ]);
 
-    Chat::factory()->instructionSheet()->create([
+    Chat::factory()->deliverable()->create([
         'task_id' => $task->id,
         'content' => $instructionSheetContent,
+        'playbook_content' => $instructionSheetContent,
     ]);
 
     $mail = new LaunchpadCompletionMail($task);
@@ -173,7 +175,7 @@ it('renders the email template without errors', function () use ($instructionShe
 
     expect($rendered)->toContain('Hi Brad');
     expect($rendered)->toContain('Sarah');
-    expect($rendered)->toContain('View your instructions');
+    expect($rendered)->toContain('View your Playbook');
     expect($rendered)->toContain("/launchpad/{$task->token}");
     expect($rendered)->toContain('Build My Assistant');
 });
@@ -184,9 +186,10 @@ it('completion email does not contain invoice link', function () use ($instructi
         'stripe_invoice_url' => 'https://invoice.stripe.com/i/acct_123/test_inv_456',
     ]);
 
-    Chat::factory()->instructionSheet()->create([
+    Chat::factory()->deliverable()->create([
         'task_id' => $task->id,
         'content' => $instructionSheetContent,
+        'playbook_content' => $instructionSheetContent,
     ]);
 
     $mail = new LaunchpadCompletionMail($task);

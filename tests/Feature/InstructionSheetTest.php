@@ -20,10 +20,10 @@ beforeEach(function () {
     app()->instance(ClaudeApiService::class, $this->mock);
 });
 
-it('detects instruction sheet marker and sets is_instruction_sheet on message', function () {
+it('detects deliverable marker and sets is_deliverable on message', function () {
     $this->mock->shouldReceive('streamChat')->andReturnUsing(function () {
         return (function () {
-            yield "Here is your instruction sheet\n\n<!-- INSTRUCTION_SHEET -->";
+            yield "Here is your Playbook\n\n<!-- INSTRUCTION_SHEET -->";
         })();
     });
 
@@ -42,14 +42,14 @@ it('detects instruction sheet marker and sets is_instruction_sheet on message', 
 
     $assistantMessage = $task->chats()->where('role', 'assistant')->latest('id')->first();
 
-    expect($assistantMessage->is_instruction_sheet)->toBeTrue()
+    expect($assistantMessage->is_deliverable)->toBeTrue()
         ->and($assistantMessage->content)->not->toContain('<!-- INSTRUCTION_SHEET -->');
 });
 
 it('strips marker from stored content', function () {
     $this->mock->shouldReceive('streamChat')->andReturnUsing(function () {
         return (function () {
-            yield "Your instructions\n\n<!-- INSTRUCTION_SHEET -->";
+            yield "Your Playbook\n\n<!-- INSTRUCTION_SHEET -->";
         })();
     });
 
@@ -66,15 +66,45 @@ it('strips marker from stored content', function () {
         ->call('sendMessage')
         ->call('streamResponse');
 
-    $message = $task->chats()->where('is_instruction_sheet', true)->first();
+    $message = $task->chats()->where('is_deliverable', true)->first();
 
-    expect($message->content)->toBe('Your instructions');
+    expect($message->content)->toBe('Your Playbook');
 });
 
-it('sets playbook_delivered on task when first instruction sheet is delivered', function () {
+it('parses playbook and instructions content into separate columns', function () {
+    $deliverableContent = "## 1. Your Bottleneck\nYou spend 3 hours a day on email.\n\n## 2. Your Process Map\nTriage, draft, send.\n\n<!-- INSTRUCTIONS_START -->\n\n# Sarah — AI Assistant for Jane\n\n## Role\nYou are Sarah.";
+
+    $this->mock->shouldReceive('streamChat')->andReturnUsing(function () use ($deliverableContent) {
+        return (function () use ($deliverableContent) {
+            yield $deliverableContent . "\n\n<!-- INSTRUCTION_SHEET -->";
+        })();
+    });
+
+    $task = Assistant::factory()->active()->create(['phase' => 1]);
+
+    Chat::factory()->create([
+        'task_id' => $task->id,
+        'role' => 'assistant',
+        'content' => 'Hello!',
+    ]);
+
+    Livewire::test(LaunchpadChat::class, ['task' => $task])
+        ->set('input', 'Build it')
+        ->call('sendMessage')
+        ->call('streamResponse');
+
+    $message = $task->chats()->where('is_deliverable', true)->first();
+
+    expect($message->playbook_content)->toContain('Your Bottleneck')
+        ->and($message->playbook_content)->not->toContain('# Sarah')
+        ->and($message->instructions_content)->toContain('# Sarah — AI Assistant for Jane')
+        ->and($message->instructions_content)->toContain('## Role');
+});
+
+it('sets playbook_delivered on task when first deliverable is delivered', function () {
     $this->mock->shouldReceive('streamChat')->andReturnUsing(function () {
         return (function () {
-            yield "Instruction sheet content<!-- INSTRUCTION_SHEET -->";
+            yield "Playbook content<!-- INSTRUCTION_SHEET -->";
         })();
     });
 
@@ -127,19 +157,17 @@ it('sets task to completed and transitions to Post-Playbook on Playbook delivery
         ->and($fresh->session_completed_at)->not->toBeNull();
 });
 
-it('renders instruction sheet messages with copy and download buttons', function () {
+it('renders deliverable messages with copy and two download buttons', function () {
     $task = Assistant::factory()->active()->create();
 
-    Chat::factory()->create([
+    Chat::factory()->deliverable()->create([
         'task_id' => $task->id,
-        'role' => 'assistant',
-        'content' => 'Here is your instruction sheet content',
-        'is_instruction_sheet' => true,
     ]);
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])
         ->assertSee('Copy instructions')
-        ->assertSee('Download');
+        ->assertSee('Download Playbook')
+        ->assertSee('Download Instructions');
 });
 
 it('does not render copy/download buttons on regular messages', function () {
@@ -149,7 +177,7 @@ it('does not render copy/download buttons on regular messages', function () {
         'task_id' => $task->id,
         'role' => 'assistant',
         'content' => 'Just a regular message',
-        'is_instruction_sheet' => false,
+        'is_deliverable' => false,
     ]);
 
     Livewire::test(LaunchpadChat::class, ['task' => $task])

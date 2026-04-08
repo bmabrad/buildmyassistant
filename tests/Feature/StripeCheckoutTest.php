@@ -16,5 +16,5 @@ it('shows the sales page', function () {
     $response = $this->get('/launchpad');
 
     $response->assertStatus(200);
-    $response->assertSee('$5 AUD');
+    $response->assertSee('$7');
 });

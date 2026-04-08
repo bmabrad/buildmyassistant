@@ -1,8 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\PromptBuilderController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BlogController;
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\LaunchpadController;
@@ -13,7 +12,12 @@ use App\Http\Middleware\ValidateLaunchpadToken;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('home');
+    $articles = \App\Models\Article::published()
+        ->orderByDesc('published_at')
+        ->take(3)
+        ->get();
+
+    return view('home', ['articles' => $articles]);
 })->name('home');
 
 Route::get('/about', function () {
@@ -51,10 +55,10 @@ Route::get('/terms', function () {
     return view('terms');
 })->name('terms');
 
-// Blog routes
-Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
-Route::get('/blog/feed', [BlogController::class, 'feed'])->name('blog.feed');
-Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+// Article routes
+Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
+Route::get('/articles/feed', [ArticleController::class, 'feed'])->name('articles.feed');
+Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
 
 // Launchpad routes
 Route::get('/launchpad', [LaunchpadController::class, 'show'])->name('launchpad');
@@ -63,8 +67,8 @@ Route::get('/launchpad/success', [LaunchpadController::class, 'success'])->name(
 
 Route::middleware(ValidateLaunchpadToken::class)->group(function () {
     Route::get('/launchpad/{token}', [LaunchpadController::class, 'chat'])->name('launchpad.chat');
-    Route::get('/launchpad/{token}/instructions.txt', [LaunchpadController::class, 'downloadInstructions'])->name('launchpad.instructions');
-    Route::get('/launchpad/{token}/instructions.pdf', [LaunchpadController::class, 'downloadInstructionsPdf'])->name('launchpad.instructions.pdf');
+    Route::get('/launchpad/{token}/playbook.pdf', [LaunchpadController::class, 'downloadPlaybookPdf'])->name('launchpad.playbook.pdf');
+    Route::get('/launchpad/{token}/instructions.md', [LaunchpadController::class, 'downloadInstructionsMd'])->name('launchpad.instructions.md');
     Route::get('/launchpad/{token}/chat.txt', [LaunchpadController::class, 'downloadChat'])->name('launchpad.chat.download');
 });
 
@@ -95,12 +99,6 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/admin/impersonate/{user}', [ImpersonationController::class, 'start'])->name('admin.impersonate');
     Route::post('/admin/stop-impersonating', [ImpersonationController::class, 'stop'])->name('admin.stop-impersonating');
-});
-
-// Admin prompt builder
-Route::middleware(['auth'])->prefix('admin')->group(function () {
-    Route::get('/prompt-builder', [PromptBuilderController::class, 'index'])->name('admin.prompt-builder');
-    Route::post('/prompt-builder/chat', [PromptBuilderController::class, 'chat'])->name('admin.prompt-builder.chat');
 });
 
 // Stripe webhook

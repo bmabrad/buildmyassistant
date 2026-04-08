@@ -24,12 +24,12 @@ class LaunchpadCompletionMail extends Mailable implements ShouldQueue
         $this->buyerName = $task->name;
         $this->chatUrl = url("/launchpad/{$task->token}");
 
-        $instructionSheet = $task->chats()
-            ->where('is_instruction_sheet', true)
+        $deliverable = $task->chats()
+            ->where('is_deliverable', true)
             ->latest('created_at')
             ->first();
 
-        $content = $instructionSheet?->content ?? '';
+        $content = $deliverable?->playbook_content ?? $deliverable?->content ?? '';
         $this->assistantName = $this->extractAssistantName($content);
         $this->assistantHandles = $this->extractAssistantHandles($content);
     }
@@ -37,7 +37,7 @@ class LaunchpadCompletionMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your AI assistant instructions are ready',
+            subject: 'Your AI Assistant Playbook is ready',
         );
     }
 

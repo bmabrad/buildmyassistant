@@ -11,7 +11,7 @@
 
             <h2 class="text-2xl font-medium text-slate leading-tight mt-8 mb-4">The service</h2>
             <p class="mb-4">
-                The AI Assistant Launchpad is a guided chat session that helps you build a custom AI assistant instruction sheet for one business process. Each $5 AUD payment gives you access to one session.
+                The AI Assistant Launchpad is a guided chat session that helps you build a custom AI assistant instruction sheet for one business process. Each $7 AUD payment gives you access to one session.
             </p>
 
             <h2 class="text-2xl font-medium text-slate leading-tight mt-8 mb-4">What you receive</h2>
@@ -19,7 +19,8 @@
                 <li>A private chat session with an AI guide</li>
                 <li>A custom instruction sheet for an AI assistant tailored to your business process</li>
                 <li>The ability to copy, download, and use the instruction sheet</li>
-                <li>Ongoing access to your chat session via your unique link</li>
+                <li>7 days of post-session support to help you get set up</li>
+                <li>Ongoing access to your Playbook and chat history via your unique link</li>
             </ul>
 
             <h2 class="text-2xl font-medium text-slate leading-tight mt-8 mb-4">Intellectual property</h2>
@@ -44,7 +45,7 @@
 
             <h2 class="text-2xl font-medium text-slate leading-tight mt-8 mb-4">Limitation of liability</h2>
             <p class="mb-4">
-                To the maximum extent permitted by law, Build My Assistant is not liable for any indirect, incidental, or consequential damages arising from the use of this service. Our total liability is limited to the amount you paid for the session ($5 AUD).
+                To the maximum extent permitted by law, Build My Assistant is not liable for any indirect, incidental, or consequential damages arising from the use of this service. Our total liability is limited to the amount you paid for the session ($7 AUD).
             </p>
 
             <h2 class="text-2xl font-medium text-slate leading-tight mt-8 mb-4">Changes to these terms</h2>
