@@ -194,7 +194,7 @@ class LaunchpadChat extends Component
 
             if ($playbookDetected) {
                 $this->stream(
-                    content: ($safeContent ?: '') . "\n\nPutting your Playbook together now...",
+                    content: ($safeContent ?: '') . "\n\nPutting your Playbook together now" . '<span style="display: inline-flex; gap: 4px; align-items: center; padding: 0 0 0 6px; vertical-align: middle;"><span class="typing-dot" style="animation-delay: 0s;"></span><span class="typing-dot" style="animation-delay: 0.2s;"></span><span class="typing-dot" style="animation-delay: 0.4s;"></span></span>',
                     name: 'streamed-response',
                     replace: true,
                 );
@@ -326,7 +326,7 @@ class LaunchpadChat extends Component
     {
         // Show "generating" message during streaming
         $this->stream(
-            content: 'Putting your Playbook together now...',
+            content: 'Putting your Playbook together now<span style="display: inline-flex; gap: 4px; align-items: center; padding: 0 0 0 6px; vertical-align: middle;"><span class="typing-dot" style="animation-delay: 0s;"></span><span class="typing-dot" style="animation-delay: 0.2s;"></span><span class="typing-dot" style="animation-delay: 0.4s;"></span></span>',
             name: 'streamed-response',
             replace: true,
         );
@@ -339,7 +339,7 @@ class LaunchpadChat extends Component
 
             // Keep showing the loading message (don't show raw playbook)
             $this->stream(
-                content: 'Putting your Playbook together now...',
+                content: 'Putting your Playbook together now<span style="display: inline-flex; gap: 4px; align-items: center; padding: 0 0 0 6px; vertical-align: middle;"><span class="typing-dot" style="animation-delay: 0s;"></span><span class="typing-dot" style="animation-delay: 0.2s;"></span><span class="typing-dot" style="animation-delay: 0.4s;"></span></span>',
                 name: 'streamed-response',
                 replace: true,
             );
@@ -386,7 +386,7 @@ class LaunchpadChat extends Component
                         $repairResponse .= $chunk;
 
                         $this->stream(
-                            content: 'Putting your Playbook together now...',
+                            content: 'Putting your Playbook together now<span style="display: inline-flex; gap: 4px; align-items: center; padding: 0 0 0 6px; vertical-align: middle;"><span class="typing-dot" style="animation-delay: 0s;"></span><span class="typing-dot" style="animation-delay: 0.2s;"></span><span class="typing-dot" style="animation-delay: 0.4s;"></span></span>',
                             name: 'streamed-response',
                             replace: true,
                         );
@@ -504,7 +504,7 @@ class LaunchpadChat extends Component
 
             if ($isGeneratingPlaybook) {
                 $this->stream(
-                    content: 'Putting your Playbook together now...',
+                    content: 'Putting your Playbook together now<span style="display: inline-flex; gap: 4px; align-items: center; padding: 0 0 0 6px; vertical-align: middle;"><span class="typing-dot" style="animation-delay: 0s;"></span><span class="typing-dot" style="animation-delay: 0.2s;"></span><span class="typing-dot" style="animation-delay: 0.4s;"></span></span>',
                     name: 'streamed-response',
                     replace: true,
                 );
