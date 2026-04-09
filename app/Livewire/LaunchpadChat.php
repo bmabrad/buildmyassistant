@@ -153,15 +153,36 @@ class LaunchpadChat extends Component
         $directive = $action['directive'] ?? '';
         $fullResponse = '';
 
+        $playbookDetected = false;
+        $safeContent = '';
+
         foreach ($api->streamWithDirective($this->task, $directive, $userMessage) as $chunk) {
             $fullResponse .= $chunk;
             $this->streamedContent = $fullResponse;
 
-            $this->stream(
-                content: $fullResponse,
-                name: 'streamed-response',
-                replace: true,
-            );
+            // Check for playbook content every chunk — use fast check first, full check after 500 chars
+            if (! $playbookDetected) {
+                if (self::quickPlaybookCheck($fullResponse) || (strlen($fullResponse) > 500 && self::detectDeliverable($fullResponse))) {
+                    $playbookDetected = true;
+                    // Capture the safe part (everything before playbook content started)
+                    $safeContent = self::extractSafePrefix($fullResponse);
+                }
+            }
+
+            if ($playbookDetected) {
+                $this->stream(
+                    content: ($safeContent ?: '') . "\n\nPutting your Playbook together now...",
+                    name: 'streamed-response',
+                    replace: true,
+                );
+            } else {
+                $safeContent = $fullResponse;
+                $this->stream(
+                    content: $fullResponse,
+                    name: 'streamed-response',
+                    replace: true,
+                );
+            }
         }
 
         // Record token usage
@@ -188,14 +209,61 @@ class LaunchpadChat extends Component
             }
         }
 
-        // If in 'noted' sub-state (Step 3), truncate response to prevent AI
-        // from generating the Playbook inline. Keep only the acknowledgment.
-        $currentState = $this->task->flow_state ?? [];
-        if (($currentState['step'] ?? 0) === 3 && ($currentState['sub_state'] ?? '') === 'noted') {
-            // Strip any playbook-like content: cut at first markdown heading or --- separator
-            if (preg_match('/^(.+?)(?=\n\s*(?:#{1,3}\s|---|\*\*\d+\.))/s', $fullResponse, $trimMatch)) {
-                $fullResponse = trim($trimMatch[1]);
+        // HARD FILTER: Strip any playbook/instruction content from chat responses.
+        // The playbook is ONLY generated via generatePlaybook() and shown as a
+        // download card. If the AI generates playbook content in a regular chat
+        // message, we strip it out and keep only the conversational part.
+        if (self::detectDeliverable($fullResponse)) {
+            \Illuminate\Support\Facades\Log::warning('Stripped rogue playbook from chat response', [
+                'task_id' => $this->task->id,
+                'step' => $this->task->flow_state['step'] ?? 'unknown',
+            ]);
+
+            // Keep everything before the first playbook-like heading
+            $cutPatterns = [
+                '/\n\s*#{1,3}\s+.*(?:Playbook|Assistant|Bottleneck|Process Map)/i',
+                '/\n\s*\*\*\d+\.\s+(?:Your Bottleneck|Your Process Map|How \w+ Works|Getting Started|What Happens Next)\*\*/i',
+                '/\n\s*<!-- INSTRUCTION(?:_SHEET|S_START) -->/i',
+                '/\n\s*---\s*\n\s*#/s',
+            ];
+
+            foreach ($cutPatterns as $pattern) {
+                if (preg_match($pattern, $fullResponse, $m, PREG_OFFSET_CAPTURE)) {
+                    $fullResponse = trim(substr($fullResponse, 0, $m[0][1]));
+                    break;
+                }
             }
+
+            // If we stripped everything, use a fallback
+            if (strlen(trim($fullResponse)) < 10) {
+                $fullResponse = "Let me get your Playbook ready for you.";
+            }
+
+            // Store the stripped message and trigger real playbook generation
+            $this->task->chats()->create([
+                'role' => 'assistant',
+                'content' => $fullResponse,
+                'phase' => $this->task->flow_state['step'] ?? $this->task->phase,
+            ]);
+
+            // Jump straight to playbook generation if it hasn't been delivered yet
+            if (! $this->task->playbook_delivered) {
+                $currentState = $this->task->flow_state ?? FlowEngine::initState();
+                $currentState['step'] = 4;
+                $currentState['sub_state'] = 'generating';
+                $currentState['ai_turns'] = 0;
+                $this->task->update(['flow_state' => $currentState]);
+
+                $this->task->refresh();
+                $this->generatePlaybook($api, $this->task->flow_state);
+            } else {
+                $this->isStreaming = false;
+                $this->streamedContent = '';
+                $this->task->load('chats');
+                $this->dispatch('response-complete');
+            }
+
+            return;
         }
 
         // Let FlowEngine process the AI's response (update turn count)
@@ -499,31 +567,113 @@ class LaunchpadChat extends Component
     // Deliverable detection and parsing (shared)
     // ───────────────────────────────────────────────
 
-    public static function detectDeliverable(string $content): bool
+    /**
+     * Fast check for obvious playbook content — runs on every streaming chunk.
+     * Cheap string checks only, no regex.
+     */
+    public static function quickPlaybookCheck(string $content): bool
     {
-        if (str_contains($content, '<!-- INSTRUCTION_SHEET -->')) {
-            return true;
-        }
-
-        $patterns = [
-            '/##?\s*(Your Bottleneck|What \w+ Does|What \w+ does)/i',
-            '/##?\s*(Your Process Map|How \w+ Works|Training \w+)/i',
-            '/<!-- INSTRUCTIONS_START -->/',
-            '/##?\s*Role\b.*\bYou are \w+,?\s*(an?\s+)?AI\s+assistant/is',
-            '/##?\s*(Getting Started|Onboarding Sequence|How You Learn)/i',
-            '/Your .+ Assistant:\s*\w+/i',
-            '/Time saved:/i',
-            '/##?\s*(Setup Instructions|Setup Steps|First test task)/i',
+        $signals = [
+            '<!-- INSTRUCTION_SHEET -->',
+            '<!-- INSTRUCTIONS_START -->',
+            'Your Bottleneck',
+            'Your Process Map',
+            'What Happens Next',
+            'Getting Started',
+            'Onboarding Sequence',
+            'How You Learn',
+            'Output Style',
+            'Business Context',
+            'First test task',
+            'PLAYBOOK',
         ];
 
-        $matches = 0;
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $content)) {
-                $matches++;
+        $hits = 0;
+        foreach ($signals as $signal) {
+            if (stripos($content, $signal) !== false) {
+                $hits++;
+                if ($hits >= 2) {
+                    return true;
+                }
             }
         }
 
-        return $matches >= 2;
+        // Any explicit marker is instant detection
+        if (str_contains($content, '<!-- INSTRUCTION')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Extract the conversational prefix before playbook content starts.
+     */
+    public static function extractSafePrefix(string $content): string
+    {
+        // Cut at the first playbook-like pattern
+        $cutPatterns = [
+            '/\n\s*#{1,3}\s+.*(?:Playbook|Bottleneck|Process Map|Getting Started|What Happens|Setup Guide|Complete Setup)/i',
+            '/\n\s*\*\*(?:THE\s|YOUR\s|What \w+ Does|\d+\.)/i',
+            '/\n\s*<!-- INSTRUCTION/i',
+            '/\n\s*---\s*\n/s',
+        ];
+
+        foreach ($cutPatterns as $pattern) {
+            if (preg_match($pattern, $content, $m, PREG_OFFSET_CAPTURE)) {
+                $prefix = trim(substr($content, 0, $m[0][1]));
+                if (strlen($prefix) > 10) {
+                    return $prefix;
+                }
+            }
+        }
+
+        // If we can't find a clean cut point, take the first sentence
+        if (preg_match('/^(.+?[.!?])\s/s', $content, $m)) {
+            return trim($m[1]);
+        }
+
+        return '';
+    }
+
+    /**
+     * Full deliverable detection — used after streaming completes.
+     */
+    public static function detectDeliverable(string $content): bool
+    {
+        // Quick check first
+        if (self::quickPlaybookCheck($content)) {
+            return true;
+        }
+
+        // Strong signals — any ONE of these means playbook content
+        $strongPatterns = [
+            '/\*\*\d+\.\s*Your Bottleneck\*\*/i',
+            '/\*\*\d+\.\s*Your Process Map\*\*/i',
+            '/\*\*\d+\.\s*Getting Started\*\*/i',
+            '/\*\*\d+\.\s*What Happens Next\*\*/i',
+            '/You are \w+,?\s*(?:an?\s+)?AI\s+assistant\s+for/i',
+            '/\*\*What \w+ (?:Does|does) (?:For|for) You\*\*/i',
+            '/\*\*How (?:It|.+?) Works\*\*/i',
+            '/\*\*(?:Getting|Setting) \w+ (?:Ready|Up)\*\*/i',
+            '/\*\*Priority Categories/i',
+            '/\*\*Your (?:New|Complete)/i',
+        ];
+
+        foreach ($strongPatterns as $pattern) {
+            if (preg_match($pattern, $content)) {
+                return true;
+            }
+        }
+
+        // Length + structure heuristic: a normal chat message is short.
+        // If the response is long and has multiple bold headings or markdown headings, it's playbook.
+        $headingCount = preg_match_all('/(?:^#{1,3}\s+\w|\*\*[A-Z][\w\s]+\*\*)/m', $content);
+        if (strlen($content) > 800 && $headingCount >= 3) {
+            return true;
+        }
+
+        return false;
     }
 
     public static function stripDeliverableMarker(string $content): string
