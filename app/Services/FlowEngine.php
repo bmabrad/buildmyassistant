@@ -218,16 +218,19 @@ class FlowEngine
     private function advanceToStep3(array $state, Assistant $task): array
     {
         $state['step'] = 3;
-        $state['sub_state'] = 'name_presenting';
+        $state['sub_state'] = 'name_question';
         $state['ai_turns'] = 0;
 
         // Pick a suggested name
         $suggestedName = self::NAMES[array_rand(self::NAMES)];
         $state['data']['suggested_name'] = $suggestedName;
 
-        $directive = "STOP asking discovery questions. The discovery phase is OVER. Now summarise the core job in one sentence (e.g. 'Your assistant will handle your email triage in Gmail'). Tell them the assistant will learn from their existing data on first use. Then suggest the name '{$suggestedName}' and ask: 'I am thinking of calling your assistant {$suggestedName}. Are you happy with that, or would you like me to suggest some other options?' Do NOT ask any other questions. Do NOT describe how the assistant will do the job.";
-
-        return ['action' => 'call_ai', 'directive' => $directive, 'state' => $state];
+        // Hard-coded name question — do not trust the AI with this
+        return [
+            'action' => 'hard_message',
+            'message' => "Great, we have got your process locked down! Now let's give your assistant a name. I am thinking of calling them {$suggestedName}. Are you happy with that, or would you like me to suggest some other options?",
+            'state' => $state,
+        ];
     }
 
     // ───────────────────────────────────────────────
@@ -238,25 +241,6 @@ class FlowEngine
     {
         $subState = $state['sub_state'];
 
-        // name_presenting: the AI should have just asked the name question.
-        // Check the last AI message to verify — if the AI went off-script
-        // and asked something else, re-ask the name question.
-        if ($subState === 'name_presenting') {
-            $lastAiMessage = $task->chats()->where('role', 'assistant')->latest('id')->value('content') ?? '';
-            $suggestedName = $state['data']['suggested_name'] ?? '';
-
-            if ($suggestedName && stripos($lastAiMessage, $suggestedName) !== false) {
-                // AI asked the name question — process the user's response
-                $state['sub_state'] = 'name_question';
-                $subState = 'name_question';
-            } else {
-                // AI went off-script — force the name question now
-                $directive = "IMPORTANT: You must ask the naming question now. Say: 'I am thinking of calling your assistant {$suggestedName}. Are you happy with that, or would you like me to suggest some other options?' Do NOT ask any other questions.";
-
-                return ['action' => 'call_ai', 'directive' => $directive, 'state' => $state];
-            }
-        }
-
         if ($subState === 'name_question') {
             // Check if they accepted the name or want alternatives
             if ($this->isAffirmative($userMessage) || $this->containsName($userMessage, $state['data']['suggested_name'] ?? '')) {
@@ -265,9 +249,12 @@ class FlowEngine
                 $state['sub_state'] = 'anything_else';
 
                 $name = $state['data']['assistant_name'];
-                $directive = "The buyer has chosen the name {$name}. Say 'Great, {$name} it is!' Then ask exactly: 'Before I put your Playbook together, is there anything else I should know about how you work or what you need from this assistant?' Do NOT generate the Playbook. Do NOT discuss anything else. Just acknowledge the name and ask the question.";
 
-                return ['action' => 'call_ai', 'directive' => $directive, 'state' => $state];
+                return [
+                    'action' => 'hard_message',
+                    'message' => "Great, {$name} it is! Before I put your Playbook together, is there anything else I should know about how you work or what you need from this assistant?",
+                    'state' => $state,
+                ];
             }
 
             // They want a different name - check if they gave one
@@ -277,9 +264,11 @@ class FlowEngine
                 $state['data']['suggested_name'] = $providedName;
                 $state['sub_state'] = 'anything_else';
 
-                $directive = "The buyer wants to call their assistant {$providedName}. Say 'Great, {$providedName} it is!' Then ask exactly: 'Before I put your Playbook together, is there anything else I should know about how you work or what you need from this assistant?' Do NOT generate the Playbook.";
-
-                return ['action' => 'call_ai', 'directive' => $directive, 'state' => $state];
+                return [
+                    'action' => 'hard_message',
+                    'message' => "Great, {$providedName} it is! Before I put your Playbook together, is there anything else I should know about how you work or what you need from this assistant?",
+                    'state' => $state,
+                ];
             }
 
             // They want alternatives
@@ -326,9 +315,11 @@ class FlowEngine
                 $state['data']['suggested_name'] = $chosenName;
                 $state['sub_state'] = 'anything_else';
 
-                $directive = "The buyer has chosen the name {$chosenName}. Say 'Great, {$chosenName} it is!' Then ask exactly: 'Before I put your Playbook together, is there anything else I should know about how you work or what you need from this assistant?' Do NOT generate the Playbook.";
-
-                return ['action' => 'call_ai', 'directive' => $directive, 'state' => $state];
+                return [
+                    'action' => 'hard_message',
+                    'message' => "Great, {$chosenName} it is! Before I put your Playbook together, is there anything else I should know about how you work or what you need from this assistant?",
+                    'state' => $state,
+                ];
             }
 
             // Couldn't parse their choice — ask again
@@ -339,8 +330,13 @@ class FlowEngine
         }
 
         if ($subState === 'anything_else') {
-            // If they said no / nothing else, go straight to generation
-            if ($this->isNegative($userMessage)) {
+            // If they said no, yes/go ahead, or gave a very short response,
+            // treat it as "nothing else to add" and go straight to generation.
+            // Only treat as additional notes if they wrote something substantive.
+            $isShortResponse = strlen(trim($userMessage)) < 30;
+            $isDismissive = $this->isNegative($userMessage) || $this->isAffirmative($userMessage);
+
+            if ($isDismissive || $isShortResponse) {
                 $state['step'] = 4;
                 $state['sub_state'] = 'generating';
                 $state['ai_turns'] = 0;
@@ -348,7 +344,7 @@ class FlowEngine
                 return ['action' => 'generate_playbook', 'state' => $state];
             }
 
-            // They raised something — store it and let the AI acknowledge before generating
+            // They raised something substantive — store it and let the AI acknowledge before generating
             $state['data']['additional_notes'] = $userMessage;
             $state['sub_state'] = 'noted';
 

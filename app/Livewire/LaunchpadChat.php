@@ -149,6 +149,29 @@ class LaunchpadChat extends Component
             return;
         }
 
+        // Hard-coded message — no AI call, just display it directly
+        if ($action['action'] === 'hard_message') {
+            $message = $action['message'];
+
+            $this->stream(
+                content: $message,
+                name: 'streamed-response',
+                replace: true,
+            );
+
+            $this->task->chats()->create([
+                'role' => 'assistant',
+                'content' => $message,
+                'phase' => $action['state']['step'],
+            ]);
+
+            $this->isStreaming = false;
+            $this->streamedContent = '';
+            $this->task->load('chats');
+            $this->dispatch('response-complete');
+            return;
+        }
+
         // action === 'call_ai' — stream with scoped directive
         $directive = $action['directive'] ?? '';
         $fullResponse = '';

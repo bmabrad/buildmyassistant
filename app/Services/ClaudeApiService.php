@@ -176,9 +176,9 @@ class ClaudeApiService
         $assembler = new PromptAssembler();
         $systemPrompt = $assembler->assembleForSubState($task, $directive);
 
-        // Cap chat responses at 1024 tokens — no chat message should need more.
+        // Cap chat responses at 512 tokens — no chat message should need more.
         // This prevents the AI from generating playbook-length content.
-        return $this->streamWithPrompt($task, $systemPrompt, $userMessage, 1024);
+        return $this->streamWithPrompt($task, $systemPrompt, $userMessage, 512);
     }
 
     /**
