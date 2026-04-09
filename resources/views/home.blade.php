@@ -3,7 +3,7 @@
     {{-- Hero (dark) --}}
     <section class="bg-slate text-white py-16 text-center">
         <div class="max-w-[720px] mx-auto px-6">
-            <h1 class="text-4xl font-medium text-white leading-tight mb-4">Stop doing the work AI should be doing for you</h1>
+            <h1 class="text-4xl font-medium text-white leading-tight mb-4">Stop Doing the Work AI Should Be Doing for You</h1>
             <p class="text-soft-sage text-base max-w-[540px] mx-auto mb-8">You run your own business. You are good at what you do. But too much of your week goes to work that could be handled by a well-built AI assistant.</p>
             <a href="/launchpad" class="inline-block px-8 py-3 bg-sage text-white rounded-md text-sm font-medium no-underline hover:bg-sage-dark">See how it works</a>
         </div>

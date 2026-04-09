@@ -20,6 +20,19 @@ beforeEach(function () {
             yield 'How can I help you today?';
         })();
     });
+    $mock->shouldReceive('streamWithDirective')->andReturnUsing(function () {
+        return (function () {
+            yield 'Hello! ';
+            yield 'How can I help you today?';
+        })();
+    });
+    $mock->shouldReceive('streamPlaybook')->andReturnUsing(function () {
+        return (function () {
+            yield '**1. Your Bottleneck**' . "\n\nTest content\n\n";
+            yield '<!-- INSTRUCTIONS_START -->' . "\n\n";
+            yield '# Sarah — AI Assistant' . "\n\n## Role\nYou are Sarah.";
+        })();
+    });
     $mock->shouldReceive('getLastStreamUsage')->andReturn([
         'input_tokens' => 100,
         'output_tokens' => 50,

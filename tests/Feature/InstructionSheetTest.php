@@ -4,11 +4,13 @@ use App\Livewire\LaunchpadChat;
 use App\Models\Chat;
 use App\Models\Assistant;
 use App\Services\ClaudeApiService;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
     \Illuminate\Support\Facades\Cache::flush();
+    Mail::fake();
     Storage::fake('local');
     Storage::disk('local')->put('launchpad/system_prompt.md', 'Test prompt for {{BUYER_NAME}}');
 
@@ -17,6 +19,11 @@ beforeEach(function () {
         'input_tokens' => 100,
         'output_tokens' => 50,
     ]);
+    $this->mock->shouldReceive('streamWithDirective')->andReturnUsing(function () {
+        return (function () {
+            yield 'Test response';
+        })();
+    });
     app()->instance(ClaudeApiService::class, $this->mock);
 });
 
@@ -68,7 +75,7 @@ it('strips marker from stored content', function () {
 
     $message = $task->chats()->where('is_deliverable', true)->first();
 
-    expect($message->content)->toBe('Your Playbook');
+    expect($message->content)->toBe('Your Playbook is ready.');
 });
 
 it('parses playbook and instructions content into separate columns', function () {

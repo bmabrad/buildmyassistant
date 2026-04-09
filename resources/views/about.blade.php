@@ -6,7 +6,7 @@
             <div style="display: flex; gap: 2rem; margin-bottom: 1rem;">
                 <img src="/images/brad-headshot.webp" alt="Brad, founder of Build My Assistant" style="width: 280px; min-width: 280px; max-height: 340px; border-radius: 0.5rem; object-fit: cover; object-position: top;">
                 <div>
-                    <h1 class="text-4xl font-medium text-slate leading-tight mb-6">I built this because I needed it</h1>
+                    <h1 class="text-4xl font-medium text-slate leading-tight mb-6">I Built This Because I Needed It</h1>
 
                     <p class="mb-4">I am Brad, and I run a business called Sunburnt Space. For the last few years I have been building and running that business using AI, figuring out what works, what does not, and how to set things up so they actually save time instead of creating more work.</p>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\LaunchpadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -59,12 +60,12 @@ class DashboardController extends Controller
 
         try {
             if (! $user->hasDefaultPaymentMethod()) {
-                return redirect()->route('launchpad');
+                return app(LaunchpadController::class)->checkout();
             }
 
             $paymentMethod = $user->defaultPaymentMethod();
         } catch (\Exception $e) {
-            return redirect()->route('launchpad');
+            return app(LaunchpadController::class)->checkout();
         }
 
         return view('dashboard.confirm-build', [

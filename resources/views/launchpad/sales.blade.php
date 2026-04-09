@@ -1,10 +1,10 @@
-<x-layouts.public :title="'AI Assistant Launchpad — Build My Assistant'" :description="'Turn your messy, time-consuming processes into AI assistants that handle them for you. One guided session, one custom assistant.'">
+<x-layouts.public :title="'AI Assistant Launchpad — Build My Assistant'" :description="'Turn your time-consuming processes into AI assistants that handle them for you. One guided session, one custom assistant.'">
 
     {{-- Hero (dark) --}}
     <section class="bg-slate text-white py-16 text-center">
         <div class="max-w-[720px] mx-auto px-6">
             <p class="text-xs font-medium uppercase tracking-wide text-sage mb-3">The AI Assistant Launchpad</p>
-            <h1 class="text-4xl font-medium text-white leading-tight mb-4">Turn your messy, time-consuming processes into AI assistants that handle them for you</h1>
+            <h1 class="text-4xl font-medium text-white leading-tight mb-4">Turn Your Time-Consuming Processes Into AI Assistants That Handle Them for You</h1>
             <p class="text-soft-sage text-base max-w-[580px] mx-auto mb-8">You know the ones. The tasks you keep meaning to sort out but never get around to. In each guided session, we map out your process, design a custom assistant around it, and hand you everything you need to get it running.</p>
             @auth
                 <a href="{{ route('dashboard.new-build') }}" class="inline-block px-8 py-3 bg-sage text-white rounded-md text-sm font-medium no-underline cursor-pointer hover:bg-sage-dark">Build my assistant</a>
@@ -14,6 +14,7 @@
                     <button type="submit" class="inline-block px-8 py-3 bg-sage text-white rounded-md text-sm font-medium cursor-pointer hover:bg-sage-dark">Build my assistant</button>
                 </form>
             @endauth
+            <p class="text-soft-sage text-sm mt-3">$7 AUD per assistant</p>
         </div>
     </section>
 

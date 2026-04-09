@@ -21,31 +21,42 @@ class PlaybookPdfService
      */
     public function parseSections(string $markdown): array
     {
-        // Match top-level section headers. Supported formats:
-        //   **1. Your Bottleneck — subtitle**     (bold wraps number+title)
-        //   ## 1. Your Bottleneck                  (markdown heading with ##)
-        //
-        // Bold must wrap the number (**N.) to distinguish from numbered
-        // sub-items inside sections like "1. Download the file" or
-        // "1. **Step name** — description *(tag)*".
-        $pattern = '/(?:^|\n)(?:#{1,3}\s+|\*{2})\d+\.\s+([^*\n]+?)\*{0,2}\s*$/m';
+        // Try multiple header patterns in order of specificity
 
-        $parts = preg_split($pattern, $markdown, -1, PREG_SPLIT_DELIM_CAPTURE);
+        // Pattern 1: Numbered bold or heading — "**1. Title**" or "## 1. Title"
+        $pattern1 = '/(?:^|\n)(?:#{1,3}\s+|\*{2})\d+\.\s+([^*\n]+?)\*{0,2}\s*$/m';
 
-        $sections = [];
-        for ($i = 1; $i < count($parts) - 1; $i += 2) {
-            $title = trim($parts[$i], " *\t\n\r");
-            $content = isset($parts[$i + 1]) ? trim($parts[$i + 1]) : '';
-            $sections[] = [
-                'title' => $title,
-                'content' => $content,
-            ];
+        // Pattern 2: Any ## heading (the most common AI output format)
+        $pattern2 = '/(?:^|\n)#{1,2}\s+([^\n]+)$/m';
+
+        foreach ([$pattern1, $pattern2] as $pattern) {
+            $parts = preg_split($pattern, $markdown, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+            $sections = [];
+            for ($i = 1; $i < count($parts) - 1; $i += 2) {
+                $title = trim($parts[$i], " *\t\n\r");
+                $content = isset($parts[$i + 1]) ? trim($parts[$i + 1]) : '';
+
+                // Skip sections that look like the assistant instructions (after the playbook)
+                if (preg_match('/Complete Instruction Sheet|Assistant Instructions/i', $title)) {
+                    break;
+                }
+
+                $sections[] = [
+                    'title' => $title,
+                    'content' => $content,
+                ];
+            }
+
+            if (count($sections) >= 2) {
+                break; // Good enough, use these sections
+            }
         }
 
-        // Strip trailing transition text from last section (e.g. "---\n\nAnd here are the instructions...")
+        // Strip trailing transition text from last section
         if (! empty($sections)) {
             $last = &$sections[count($sections) - 1];
-            $last['content'] = preg_replace('/\n---\s*\n(?:And here|Here are|Save this).*$/si', '', $last['content']);
+            $last['content'] = preg_replace('/\n---\s*\n(?:And here|Here are|Save this|There you go).*$/si', '', $last['content']);
             $last['content'] = trim($last['content']);
         }
 
@@ -64,14 +75,14 @@ class PlaybookPdfService
      */
     public function markdownToHtml(string $markdown): string
     {
-        // ── 1. Stat blocks: lines after --- matching "value — label" ──
+        // ── 1. Stat blocks: lines after --- matching "value — label" or "value - label" ──
         $markdown = preg_replace_callback(
-            '/\n---\n((?:.+\s*(?:—|–)\s*.+\n?)+)/',
+            '/\n---\n((?:.+\s*(?:—|–|-)\s*.+\n?)+)/',
             function ($matches) {
                 $lines = array_filter(array_map('trim', explode("\n", trim($matches[1]))));
                 $cards = '';
                 foreach ($lines as $line) {
-                    if (preg_match('/^(.+?)\s*(?:—|–)\s*(.+)$/', $line, $m)) {
+                    if (preg_match('/^(.+?)\s*(?:—|–|-)\s+(.+)$/', $line, $m)) {
                         $cards .= '<div class="stat-card"><div class="stat-value">' . e(trim($m[1], '* ')) . '</div><div class="stat-label">' . e(trim($m[2])) . '</div></div>';
                     }
                 }

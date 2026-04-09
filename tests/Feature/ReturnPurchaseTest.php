@@ -5,9 +5,10 @@ use App\Models\User;
 it('redirects to checkout when no saved payment method', function () {
     $user = User::factory()->magicLinkOnly()->create();
 
-    $this->actingAs($user)
-        ->get('/dashboard/new-build')
-        ->assertRedirect(route('launchpad'));
+    $response = $this->actingAs($user)
+        ->get('/dashboard/new-build');
+
+    $response->assertRedirectContains('checkout.stripe.com');
 });
 
 it('requires authentication to start a new build', function () {
@@ -26,13 +27,14 @@ it('redirects charge to checkout when no saved payment method', function () {
         ->assertRedirect(route('launchpad'));
 });
 
-it('redirects to launchpad when stripe customer is invalid', function () {
+it('redirects to checkout when stripe customer is invalid', function () {
     $user = User::factory()->create();
     $user->forceFill(['stripe_id' => 'cus_fake_invalid'])->save();
 
-    $this->actingAs($user)
-        ->get('/dashboard/new-build')
-        ->assertRedirect(route('launchpad'));
+    $response = $this->actingAs($user)
+        ->get('/dashboard/new-build');
+
+    $response->assertRedirectContains('checkout.stripe.com');
 });
 
 it('redirects post to launchpad when stripe customer is invalid', function () {

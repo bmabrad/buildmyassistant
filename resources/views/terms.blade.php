@@ -2,7 +2,7 @@
 
     <section class="py-16">
         <div class="max-w-[720px] mx-auto px-6">
-            <h1 class="text-4xl font-medium text-slate leading-tight mb-6">Terms of service</h1>
+            <h1 class="text-4xl font-medium text-slate leading-tight mb-6">Terms of Service</h1>
             <p class="text-sm text-mid-blue/70 mb-4">Last updated: {{ date('F j, Y') }}</p>
 
             <p class="mb-4">

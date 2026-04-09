@@ -67,7 +67,8 @@
                                 >Download Playbook</a>
 
                                 <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15);">
-                                    <p style="margin: 0 0 8px; font-weight: 500;">Assistant Install Instructions</p>
+                                    <p style="margin: 0 0 4px; font-weight: 500;">Assistant Install Instructions</p>
+                                    <p style="margin: 0 0 10px; font-size: 0.875rem; opacity: 0.85;">Follow these steps to get {{ $task->assistant_name ?? 'your assistant' }} working for you.</p>
                                     <ol style="margin: 0; padding-left: 20px; line-height: 1.8; list-style-type: decimal;">
                                         <li>Download the instruction file below</li>
                                         <li>Open Claude CoWork</li>
@@ -107,8 +108,8 @@
                     </div>
                 @endforeach
 
-                {{-- Streaming response --}}
-                @if ($isStreaming)
+                {{-- Streaming response or waiting for greeting --}}
+                @if ($isStreaming || $needsGreeting)
                     <div style="display: flex; justify-content: flex-start;">
                         <div class="chat-bubble chat-bubble-assistant">
                             <div class="prose" wire:stream="streamed-response">
@@ -190,27 +191,30 @@
             <h2 style="font-size: 1.125rem; font-weight: 500; color: var(--deep-slate); margin-bottom: 0.5rem;">How it works</h2>
             <p style="font-size: 0.875rem; color: var(--mid-blue); margin-bottom: 1.25rem; line-height: 1.6;">Your AI guide will walk you through building a custom assistant. Here is what to expect:</p>
 
+            @php
+                $steps = [
+                    ['label' => 'Chat with your guide to find the best assistant to build'],
+                    ['label' => 'Walk through how you do it today'],
+                    ['label' => 'Name your assistant and confirm the details'],
+                    ['label' => 'Get your Playbook and setup instructions'],
+                    ['label' => '7 days of support to refine and improve'],
+                ];
+            @endphp
+
             <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
-                    <span class="sidebar-step-num">1</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Tell your guide about your business and what is eating your time</p>
-                </div>
-                <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
-                    <span class="sidebar-step-num">2</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Watch your guide map out the full process</p>
-                </div>
-                <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
-                    <span class="sidebar-step-num">3</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Review your assistant design and confirm the approach</p>
-                </div>
-                <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
-                    <span class="sidebar-step-num">4</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">Download your Playbook and assistant instructions</p>
-                </div>
-                <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
-                    <span class="sidebar-step-num">5</span>
-                    <p style="font-size: 0.875rem; color: var(--mid-blue); line-height: 1.5; margin: 0;">7 days of support to get you up and running</p>
-                </div>
+                @foreach ($steps as $i => $stepInfo)
+                    @php $stepNum = $i + 1; @endphp
+                    <div style="display: flex; gap: 0.625rem; align-items: flex-start;">
+                        @if ($currentStep > $stepNum)
+                            <span class="sidebar-step-num sidebar-step-done">&#10003;</span>
+                        @elseif ($currentStep === $stepNum)
+                            <span class="sidebar-step-num sidebar-step-active">{{ $stepNum }}</span>
+                        @else
+                            <span class="sidebar-step-num sidebar-step-future">{{ $stepNum }}</span>
+                        @endif
+                        <p style="font-size: 0.875rem; color: {{ $currentStep >= $stepNum ? 'var(--deep-slate)' : 'var(--mid-blue)' }}; line-height: 1.5; margin: 0; {{ $currentStep === $stepNum ? 'font-weight: 500;' : '' }}">{{ $stepInfo['label'] }}</p>
+                    </div>
+                @endforeach
             </div>
 
             <div class="sidebar-tips">
@@ -234,7 +238,7 @@
         }
 
         .chat-page {
-            min-height: 70vh;
+            min-height: calc(100vh - 120px);
             background: var(--off-white);
             display: flex;
             align-items: center;
@@ -278,14 +282,28 @@
             flex-shrink: 0;
             width: 1.5rem;
             height: 1.5rem;
-            background: var(--sage-accent);
-            color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.75rem;
             font-weight: 500;
+        }
+
+        .sidebar-step-active {
+            background: var(--sage-accent);
+            color: white;
+        }
+
+        .sidebar-step-done {
+            background: var(--sage-accent);
+            color: white;
+            font-size: 0.625rem;
+        }
+
+        .sidebar-step-future {
+            background: var(--soft-sage);
+            color: var(--mid-blue);
         }
 
         .sidebar-tips {
@@ -473,7 +491,9 @@
         .prose h2 { font-size: 1.0625rem; font-weight: 500; margin: 14px 0 6px; color: white; line-height: 1.4; }
         .prose h3 { font-size: 0.9375rem; font-weight: 500; margin: 12px 0 4px; color: white; line-height: 1.4; }
         .prose p { margin: 8px 0; }
-        .prose ul, .prose ol { margin: 8px 0; padding-left: 20px; }
+        .prose ul, .prose ol { margin: 8px 0; padding-left: 20px; list-style-position: outside; }
+        .prose ul { list-style-type: disc; }
+        .prose ol { list-style-type: decimal; }
         .prose li { margin: 4px 0; }
         .prose strong { font-weight: 500; color: white; }
         .prose code {

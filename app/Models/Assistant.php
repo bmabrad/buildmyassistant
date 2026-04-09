@@ -34,10 +34,12 @@ class Assistant extends Model
         'total_input_tokens',
         'total_output_tokens',
         'user_id',
+        'flow_state',
     ];
 
     protected $casts = [
         'phase' => 'integer',
+        'flow_state' => 'array',
         'playbook_delivered' => 'boolean',
         'in_post_playbook' => 'boolean',
         'session_completed_at' => 'datetime',

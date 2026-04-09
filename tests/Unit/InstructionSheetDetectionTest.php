@@ -46,6 +46,18 @@ it('returns content unchanged when no marker present', function () {
     expect($stripped)->toBe("No marker here.");
 });
 
+it('detects deliverable via fallback patterns when marker is missing', function () {
+    $content = "## Your Bottleneck\nEmail triage\n\n## Your Process Map\n1. Check inbox\n\n## How Luna Works\nLuna sorts emails\n\n## Getting Started\n1. Open Claude";
+
+    expect(LaunchpadChat::detectDeliverable($content))->toBeTrue();
+});
+
+it('does not false-positive on regular messages with one pattern', function () {
+    $content = "## Getting Started\nHere is how to begin with your assistant.";
+
+    expect(LaunchpadChat::detectDeliverable($content))->toBeFalse();
+});
+
 it('parses deliverable content using INSTRUCTIONS_START marker', function () {
     $content = "## 1. Your Bottleneck\nContent here\n\n<!-- INSTRUCTIONS_START -->\n\n# Sarah — AI Assistant\n\n## Role\nYou are Sarah.";
 

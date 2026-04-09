@@ -20,7 +20,8 @@
 </head>
 <body class="font-sans text-[15px] font-normal leading-[1.7] text-mid-blue bg-white">
     {{-- Nav --}}
-    <nav class="max-w-[1000px] mx-auto px-6 bg-slate py-4" x-data="{ mobileOpen: false }">
+    <div class="bg-slate">
+    <nav class="max-w-[1000px] mx-auto px-6 py-4" x-data="{ mobileOpen: false }">
         <div class="flex items-center justify-between">
             <a href="/" class="text-lg font-medium text-white no-underline">Build My Assistant<span class="text-sage">.co</span></a>
 
@@ -108,12 +109,16 @@
             </div>
         </div>
     </nav>
+    </div>
 
     <main>
         {{ $slot }}
     </main>
 
     <style>
+        main {
+            min-height: calc(100vh - 120px);
+        }
         main section > div {
             max-width: 1000px;
             margin-left: auto;

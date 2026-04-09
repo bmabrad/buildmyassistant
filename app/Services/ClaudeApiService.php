@@ -168,6 +168,118 @@ class ClaudeApiService
         return $this->lastStreamUsage ?? ['input_tokens' => 0, 'output_tokens' => 0];
     }
 
+    /**
+     * Stream a chat response using a FlowEngine directive instead of the full step prompt.
+     */
+    public function streamWithDirective(Assistant $task, string $directive, ?string $userMessage = null): Generator
+    {
+        $assembler = new PromptAssembler();
+        $systemPrompt = $assembler->assembleForSubState($task, $directive);
+
+        return $this->streamWithPrompt($task, $systemPrompt, $userMessage);
+    }
+
+    /**
+     * Stream the Playbook generation using a dedicated prompt.
+     */
+    public function streamPlaybook(Assistant $task, array $collectedData, ?string $repairDirective = null): Generator
+    {
+        $assembler = new PromptAssembler();
+        $systemPrompt = $assembler->assembleForPlaybook($task, $collectedData);
+
+        if ($repairDirective) {
+            $systemPrompt .= "\n\n" . $repairDirective;
+        }
+
+        return $this->streamWithPrompt($task, $systemPrompt, null, 8192);
+    }
+
+    /**
+     * Core streaming method used by both directive and playbook generation.
+     */
+    private function streamWithPrompt(Assistant $task, string $systemPrompt, ?string $userMessage = null, ?int $maxTokens = null): Generator
+    {
+        $this->lastStreamUsage = ['input_tokens' => 0, 'output_tokens' => 0];
+
+        try {
+            $response = Http::withHeaders([
+                'x-api-key' => $this->apiKey,
+                'anthropic-version' => '2023-06-01',
+                'content-type' => 'application/json',
+            ])->timeout(120)->withOptions([
+                'stream' => true,
+            ])->post('https://api.anthropic.com/v1/messages', [
+                'model' => $this->model,
+                'max_tokens' => $maxTokens ?? $this->maxTokens,
+                'stream' => true,
+                'system' => $systemPrompt,
+                'messages' => $this->buildMessages($task, $userMessage),
+            ]);
+
+            if ($response->failed()) {
+                Log::error('Claude API stream error', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'task_id' => $task->id,
+                ]);
+                yield 'Something went wrong. Please try again.';
+                return;
+            }
+
+            $body = $response->toPsrResponse()->getBody();
+            $buffer = '';
+
+            while (! $body->eof()) {
+                $chunk = $body->read(1024);
+                $buffer .= $chunk;
+
+                while (($newlinePos = strpos($buffer, "\n")) !== false) {
+                    $line = substr($buffer, 0, $newlinePos);
+                    $buffer = substr($buffer, $newlinePos + 1);
+
+                    $line = trim($line);
+
+                    if (empty($line) || ! str_starts_with($line, 'data: ')) {
+                        continue;
+                    }
+
+                    $jsonStr = substr($line, 6);
+
+                    if ($jsonStr === '[DONE]') {
+                        break 2;
+                    }
+
+                    $data = json_decode($jsonStr, true);
+
+                    if (! $data) {
+                        continue;
+                    }
+
+                    if (($data['type'] ?? '') === 'message_start') {
+                        $this->lastStreamUsage['input_tokens'] = $data['message']['usage']['input_tokens'] ?? 0;
+                    }
+
+                    if (($data['type'] ?? '') === 'content_block_delta') {
+                        $text = $data['delta']['text'] ?? '';
+                        if ($text !== '') {
+                            yield $text;
+                        }
+                    }
+
+                    if (($data['type'] ?? '') === 'message_delta') {
+                        $this->lastStreamUsage['output_tokens'] = $data['usage']['output_tokens'] ?? 0;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Claude API stream exception', [
+                'message' => $e->getMessage(),
+                'task_id' => $task->id,
+            ]);
+            yield 'Something went wrong. Please try again.';
+        }
+    }
+
     public function getSystemPrompt(Assistant $task): string
     {
         // Use database-driven prompt segments if available
