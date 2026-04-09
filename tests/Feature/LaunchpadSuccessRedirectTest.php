@@ -1,9 +1,10 @@
 <?php
 
-use App\Models\LaunchpadTask;
+use App\Models\Assistant;
+use App\Models\User;
 
 it('redirects to chat url when task exists', function () {
-    $task = LaunchpadTask::factory()->create([
+    $task = Assistant::factory()->create([
         'stripe_payment_id' => 'cs_test_redirect_success',
     ]);
 
@@ -18,6 +19,37 @@ it('redirects to sales page when no session id provided', function () {
     $response = $this->get('/launchpad/success');
 
     $response->assertRedirect(route('launchpad'));
+});
+
+it('auto-logs in new user on first purchase success redirect', function () {
+    $user = User::factory()->create();
+
+    $task = Assistant::factory()->create([
+        'stripe_payment_id' => 'cs_test_auto_login',
+        'user_id' => $user->id,
+    ]);
+
+    $this->assertGuest();
+
+    $response = $this->get('/launchpad/success?session_id=cs_test_auto_login');
+
+    $response->assertRedirect("/launchpad/{$task->token}");
+    $this->assertAuthenticatedAs($user);
+});
+
+it('does not override existing auth on success redirect', function () {
+    $existingUser = User::factory()->create();
+    $otherUser = User::factory()->create();
+
+    $task = Assistant::factory()->create([
+        'stripe_payment_id' => 'cs_test_existing_auth',
+        'user_id' => $otherUser->id,
+    ]);
+
+    $this->actingAs($existingUser)
+        ->get('/launchpad/success?session_id=cs_test_existing_auth');
+
+    $this->assertAuthenticatedAs($existingUser);
 });
 
 it('redirects to sales page with error when task not found', function () {

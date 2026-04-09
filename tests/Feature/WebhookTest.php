@@ -1,10 +1,13 @@
 <?php
 
-use App\Models\LaunchpadTask;
+use App\Mail\PostPurchaseMail;
+use App\Models\Assistant;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Cashier\Http\Middleware\VerifyWebhookSignature;
 
 beforeEach(function () {
     $this->withoutMiddleware(VerifyWebhookSignature::class);
+    Mail::fake();
 });
 
 it('creates a task from checkout.session.completed webhook', function () {
@@ -24,7 +27,7 @@ it('creates a task from checkout.session.completed webhook', function () {
 
     $this->postJson('/stripe/webhook', $payload)->assertOk();
 
-    $task = LaunchpadTask::where('stripe_payment_id', 'cs_test_123456')->first();
+    $task = Assistant::where('stripe_payment_id', 'cs_test_123456')->first();
 
     expect($task)->not->toBeNull()
         ->and($task->name)->toBe('Jane Smith')
@@ -32,7 +35,7 @@ it('creates a task from checkout.session.completed webhook', function () {
         ->and($task->stripe_customer_id)->toBe('cus_test_789')
         ->and($task->status)->toBe('pending')
         ->and($task->phase)->toBe(1)
-        ->and($task->phase_1_complete)->toBeFalse()
+        ->and($task->playbook_delivered)->toBeFalse()
         ->and($task->token)->toMatch('/^[0-9a-f]{8}-/i');
 });
 
@@ -54,7 +57,46 @@ it('is idempotent for duplicate webhook events', function () {
     $this->postJson('/stripe/webhook', $payload);
     $this->postJson('/stripe/webhook', $payload);
 
-    expect(LaunchpadTask::where('stripe_payment_id', 'cs_test_duplicate')->count())->toBe(1);
+    expect(Assistant::where('stripe_payment_id', 'cs_test_duplicate')->count())->toBe(1);
+});
+
+it('sends post-purchase email on checkout completed', function () {
+    $payload = [
+        'type' => 'checkout.session.completed',
+        'data' => [
+            'object' => [
+                'id' => 'cs_test_email_send',
+                'customer' => 'cus_test_email',
+                'customer_details' => [
+                    'name' => 'Brad Test',
+                    'email' => 'brad@example.com',
+                ],
+            ],
+        ],
+    ];
+
+    $this->postJson('/stripe/webhook', $payload)->assertOk();
+
+    Mail::assertQueued(PostPurchaseMail::class, function ($mail) {
+        return $mail->hasTo('brad@example.com')
+            && $mail->buyerName === 'Brad Test';
+    });
+});
+
+it('does not send post-purchase email for unknown email', function () {
+    $payload = [
+        'type' => 'checkout.session.completed',
+        'data' => [
+            'object' => [
+                'id' => 'cs_test_no_email',
+                'customer_details' => [],
+            ],
+        ],
+    ];
+
+    $this->postJson('/stripe/webhook', $payload)->assertOk();
+
+    Mail::assertNotQueued(PostPurchaseMail::class);
 });
 
 it('handles missing customer details gracefully', function () {
@@ -70,7 +112,7 @@ it('handles missing customer details gracefully', function () {
 
     $this->postJson('/stripe/webhook', $payload);
 
-    $task = LaunchpadTask::where('stripe_payment_id', 'cs_test_minimal')->first();
+    $task = Assistant::where('stripe_payment_id', 'cs_test_minimal')->first();
 
     expect($task)->not->toBeNull()
         ->and($task->name)->toBe('Unknown')

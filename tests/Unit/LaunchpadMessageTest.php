@@ -1,17 +1,17 @@
 <?php
 
-use App\Models\LaunchpadMessage;
-use App\Models\LaunchpadTask;
+use App\Models\Chat;
+use App\Models\Assistant;
 
 it('belongs to a task', function () {
-    $task = LaunchpadTask::factory()->create();
-    $message = LaunchpadMessage::factory()->create(['task_id' => $task->id]);
+    $task = Assistant::factory()->create();
+    $message = Chat::factory()->create(['task_id' => $task->id]);
 
-    expect($message->task->id)->toBe($task->id);
+    expect($message->assistant->id)->toBe($task->id);
 });
 
 it('returns claude format', function () {
-    $message = LaunchpadMessage::factory()->create([
+    $message = Chat::factory()->create([
         'role' => 'user',
         'content' => 'Hello there',
     ]);
@@ -23,7 +23,7 @@ it('returns claude format', function () {
 });
 
 it('returns claude format for assistant role', function () {
-    $message = LaunchpadMessage::factory()->create([
+    $message = Chat::factory()->create([
         'role' => 'assistant',
         'content' => 'Hi! How can I help?',
     ]);
@@ -34,25 +34,35 @@ it('returns claude format for assistant role', function () {
     ]);
 });
 
-it('casts is_instruction_sheet to boolean', function () {
-    $message = LaunchpadMessage::factory()->create(['is_instruction_sheet' => true]);
+it('casts is_deliverable to boolean', function () {
+    $message = Chat::factory()->create(['is_deliverable' => true]);
 
-    expect($message->is_instruction_sheet)->toBeBool()->toBeTrue();
+    expect($message->is_deliverable)->toBeBool()->toBeTrue();
+});
+
+it('stores playbook_content and instructions_content separately', function () {
+    $message = Chat::factory()->deliverable()->create([
+        'playbook_content' => 'Playbook here',
+        'instructions_content' => 'Instructions here',
+    ]);
+
+    expect($message->playbook_content)->toBe('Playbook here')
+        ->and($message->instructions_content)->toBe('Instructions here');
 });
 
 it('auto-sets created_at on creation', function () {
-    $message = LaunchpadMessage::factory()->create();
+    $message = Chat::factory()->create();
 
     expect($message->created_at)->not->toBeNull();
 });
 
 it('cascades delete with task', function () {
-    $task = LaunchpadTask::factory()->create();
-    LaunchpadMessage::factory()->count(3)->create(['task_id' => $task->id]);
+    $task = Assistant::factory()->create();
+    Chat::factory()->count(3)->create(['task_id' => $task->id]);
 
-    expect(LaunchpadMessage::where('task_id', $task->id)->count())->toBe(3);
+    expect(Chat::where('task_id', $task->id)->count())->toBe(3);
 
     $task->delete();
 
-    expect(LaunchpadMessage::where('task_id', $task->id)->count())->toBe(0);
+    expect(Chat::where('task_id', $task->id)->count())->toBe(0);
 });

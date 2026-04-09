@@ -1,10 +1,10 @@
 <?php
 
-use App\Models\LaunchpadMessage;
-use App\Models\LaunchpadTask;
+use App\Models\Chat;
+use App\Models\Assistant;
 
 it('generates a uuid token on creation', function () {
-    $task = LaunchpadTask::factory()->create(['token' => null]);
+    $task = Assistant::factory()->create(['token' => null]);
 
     expect($task->token)
         ->not->toBeNull()
@@ -12,62 +12,62 @@ it('generates a uuid token on creation', function () {
 });
 
 it('has a unique token', function () {
-    $task1 = LaunchpadTask::factory()->create();
+    $task1 = Assistant::factory()->create();
 
-    expect(fn () => LaunchpadTask::factory()->create(['token' => $task1->token]))
+    expect(fn () => Assistant::factory()->create(['token' => $task1->token]))
         ->toThrow(\Illuminate\Database\QueryException::class);
 });
 
 it('has messages relationship', function () {
-    $task = LaunchpadTask::factory()->create();
-    $message = LaunchpadMessage::factory()->create(['task_id' => $task->id]);
+    $task = Assistant::factory()->create();
+    $message = Chat::factory()->create(['task_id' => $task->id]);
 
-    expect($task->messages)->toHaveCount(1)
-        ->and($task->messages->first()->id)->toBe($message->id);
+    expect($task->chats)->toHaveCount(1)
+        ->and($task->chats->first()->id)->toBe($message->id);
 });
 
 it('orders messages by created_at ascending', function () {
-    $task = LaunchpadTask::factory()->create();
+    $task = Assistant::factory()->create();
 
-    $older = LaunchpadMessage::factory()->create([
+    $older = Chat::factory()->create([
         'task_id' => $task->id,
         'created_at' => now()->subMinutes(5),
     ]);
-    $newer = LaunchpadMessage::factory()->create([
+    $newer = Chat::factory()->create([
         'task_id' => $task->id,
         'created_at' => now(),
     ]);
 
-    $messages = $task->messages()->get();
+    $messages = $task->chats()->get();
 
     expect($messages->first()->id)->toBe($older->id)
         ->and($messages->last()->id)->toBe($newer->id);
 });
 
 it('scopes pending tasks', function () {
-    LaunchpadTask::factory()->create(['status' => 'pending']);
-    LaunchpadTask::factory()->create(['status' => 'active']);
-    LaunchpadTask::factory()->create(['status' => 'completed']);
+    Assistant::factory()->create(['status' => 'pending']);
+    Assistant::factory()->create(['status' => 'active']);
+    Assistant::factory()->create(['status' => 'completed']);
 
-    expect(LaunchpadTask::pending()->count())->toBe(1);
+    expect(Assistant::pending()->count())->toBe(1);
 });
 
 it('scopes active tasks', function () {
-    LaunchpadTask::factory()->create(['status' => 'pending']);
-    LaunchpadTask::factory()->create(['status' => 'active']);
+    Assistant::factory()->create(['status' => 'pending']);
+    Assistant::factory()->create(['status' => 'active']);
 
-    expect(LaunchpadTask::active()->count())->toBe(1);
+    expect(Assistant::active()->count())->toBe(1);
 });
 
 it('scopes completed tasks', function () {
-    LaunchpadTask::factory()->create(['status' => 'pending']);
-    LaunchpadTask::factory()->create(['status' => 'completed']);
+    Assistant::factory()->create(['status' => 'pending']);
+    Assistant::factory()->create(['status' => 'completed']);
 
-    expect(LaunchpadTask::completed()->count())->toBe(1);
+    expect(Assistant::completed()->count())->toBe(1);
 });
 
 it('marks a task as completed', function () {
-    $task = LaunchpadTask::factory()->create(['status' => 'active']);
+    $task = Assistant::factory()->create(['status' => 'active']);
 
     $task->markCompleted();
 
@@ -75,13 +75,13 @@ it('marks a task as completed', function () {
 });
 
 it('casts phase to integer', function () {
-    $task = LaunchpadTask::factory()->create(['phase' => 1]);
+    $task = Assistant::factory()->create(['phase' => 1]);
 
     expect($task->phase)->toBeInt();
 });
 
-it('casts phase_1_complete to boolean', function () {
-    $task = LaunchpadTask::factory()->create(['phase_1_complete' => false]);
+it('casts playbook_delivered to boolean', function () {
+    $task = Assistant::factory()->create(['playbook_delivered' => false]);
 
-    expect($task->phase_1_complete)->toBeBool();
+    expect($task->playbook_delivered)->toBeBool();
 });

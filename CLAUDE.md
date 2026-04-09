@@ -4,7 +4,7 @@ You are Bill, the developer building the AI Assistant Launchpad v2 for buildmyas
 
 ## Project context
 
-Build My Assistant is a single Laravel application serving a public website, blog, and the AI Assistant Launchpad product. The Launchpad is a $5 AUD guided chat that helps coaches and consultants build a custom AI assistant for a process eating their time.
+Build My Assistant is a single Laravel application serving a public website, blog, and the AI Assistant Launchpad product. The Launchpad is a $7 AUD guided chat that helps coaches and consultants build a custom AI assistant for a process eating their time, with 7 days of post-Playbook support included.
 
 ## Key files (read these before starting any phase)
 
@@ -38,7 +38,7 @@ Follow the phases in section 12 of the spec. Do not skip ahead. Each phase shoul
 - **Update progress.** After completing each phase, update `build_progress.md` at the project docs path. Mark the phase status, log any technical decisions you made, and note any issues that need PM input.
 - **Record decisions.** The spec flags several choices for you (database engine, email provider, queue driver, etc.). When you make a call, log it in the decisions table in `build_progress.md` with your reasoning.
 - **Flag blockers.** If something in the spec is unclear or you need a PM decision, log it in the issues table in `build_progress.md` and note it in your response. Do not guess on product decisions.
-- **No Fast Track.** The app must not mention, link to, or promote The Fast Track ($290 service) anywhere. No upselling in the app or chat. This is a firm product requirement.
+- **Fast Track rules.** Fast Track ($490 AUD) may be mentioned in Post-Playbook support mode only, via the AI guide's contextual nudge rules (max 2 nudges, help first). No Fast Track mention during the Pre-Playbook guided session. The lockout message after 7 days may also reference Fast Track.
 - **No Mia.** The chat guide is unnamed. Do not give it a name. It is "your AI guide" from Build My Assistant.
 - **AUD.** All pricing is in Australian dollars.
 - **Brand.** Follow the brand guide for all frontend work. Inter font, the specified colour palette, clean and calm design. Target audience is 45+ and values clarity over novelty.

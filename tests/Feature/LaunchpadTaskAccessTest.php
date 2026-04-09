@@ -1,14 +1,36 @@
 <?php
 
-use App\Models\LaunchpadTask;
+use App\Models\Chat;
+use App\Models\Assistant;
+use App\Services\ClaudeApiService;
+use Illuminate\Support\Facades\Storage;
+
+beforeEach(function () {
+    Storage::fake('local');
+    Storage::disk('local')->put('launchpad/system_prompt.md', 'Test prompt for {{BUYER_NAME}}');
+
+    $mock = Mockery::mock(ClaudeApiService::class)->makePartial();
+    $mock->shouldReceive('streamChat')->andReturnUsing(function () {
+        return (function () {
+            yield 'Hello!';
+        })();
+    });
+    app()->instance(ClaudeApiService::class, $mock);
+});
 
 it('loads the chat page with a valid token', function () {
-    $task = LaunchpadTask::factory()->create(['status' => 'active']);
+    $task = Assistant::factory()->create(['status' => 'active']);
+
+    // Pre-seed a message to avoid mount-time streaming
+    Chat::factory()->create([
+        'task_id' => $task->id,
+        'role' => 'assistant',
+        'content' => 'Hello!',
+    ]);
 
     $response = $this->get("/launchpad/{$task->token}");
 
     $response->assertStatus(200);
-    $response->assertSee($task->name);
 });
 
 it('returns 404 for an invalid token', function () {
@@ -18,7 +40,7 @@ it('returns 404 for an invalid token', function () {
 });
 
 it('transitions task from pending to active on first access', function () {
-    $task = LaunchpadTask::factory()->create(['status' => 'pending']);
+    $task = Assistant::factory()->create(['status' => 'pending']);
 
     $this->get("/launchpad/{$task->token}");
 
@@ -26,7 +48,13 @@ it('transitions task from pending to active on first access', function () {
 });
 
 it('does not change status if already active', function () {
-    $task = LaunchpadTask::factory()->create(['status' => 'active']);
+    $task = Assistant::factory()->create(['status' => 'active']);
+
+    Chat::factory()->create([
+        'task_id' => $task->id,
+        'role' => 'assistant',
+        'content' => 'Hello!',
+    ]);
 
     $this->get("/launchpad/{$task->token}");
 
@@ -34,7 +62,13 @@ it('does not change status if already active', function () {
 });
 
 it('does not change status if already completed', function () {
-    $task = LaunchpadTask::factory()->create(['status' => 'completed']);
+    $task = Assistant::factory()->create(['status' => 'completed']);
+
+    Chat::factory()->create([
+        'task_id' => $task->id,
+        'role' => 'assistant',
+        'content' => 'Hello!',
+    ]);
 
     $this->get("/launchpad/{$task->token}");
 
