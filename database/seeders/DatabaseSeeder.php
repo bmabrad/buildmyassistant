@@ -18,5 +18,6 @@ class DatabaseSeeder extends Seeder
         $this->call(AdminUserSeeder::class);
         $this->call(BlogPostSeeder::class);
         $this->call(LaunchpadPromptSeeder::class);
+        $this->call(LaunchpadDemoSeeder::class);
     }
 }
