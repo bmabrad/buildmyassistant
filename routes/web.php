@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Middleware\Impersonating;
+use App\Livewire\LaunchpadChat;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -56,6 +57,9 @@ Route::get('/terms', function () {
 Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
 Route::get('/articles/feed', [ArticleController::class, 'feed'])->name('articles.feed');
 Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
+
+// Launchpad chat
+Route::get('/launchpad', LaunchpadChat::class)->name('launchpad');
 
 // Auth routes
 Route::middleware('guest')->group(function () {
