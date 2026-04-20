@@ -22,14 +22,9 @@ it('loads the terms page', function () {
     $this->get('/terms')->assertStatus(200)->assertSee('Terms');
 });
 
-it('loads the launchpad sales page', function () {
-    $this->get('/launchpad')->assertStatus(200)->assertSee('Launchpad');
-});
-
 it('has nav links to all main pages', function () {
     $response = $this->get('/');
 
-    $response->assertSee('href="/launchpad"', false);
     $response->assertSee('href="/articles"', false);
     $response->assertSee('href="/about"', false);
     $response->assertSee('href="/contact"', false);
@@ -122,7 +117,3 @@ it('serves the articles RSS feed', function () {
         ->assertSee('RSS Post');
 });
 
-it('has the checkout button on the sales page', function () {
-    $this->get('/launchpad')
-        ->assertSee('checkout', false);
-});
