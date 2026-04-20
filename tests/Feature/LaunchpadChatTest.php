@@ -1,9 +1,15 @@
 <?php
 
+use App\Jobs\GenerateLaunchpadOutputJob;
 use App\Livewire\LaunchpadChat;
 use App\Models\ChatSession;
 use App\Models\Lead;
+use Illuminate\Support\Facades\Bus;
 use Livewire\Livewire;
+
+beforeEach(function () {
+    Bus::fake([GenerateLaunchpadOutputJob::class]);
+});
 
 it('loads the launchpad page', function () {
     $this->get('/launchpad')->assertStatus(200)->assertSee('What would you do with an extra ten hours a week');
