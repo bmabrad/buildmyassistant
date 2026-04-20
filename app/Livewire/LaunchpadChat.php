@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Jobs\GenerateLaunchpadOutputJob;
 use App\Models\ChatSession;
 use App\Models\Lead;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -202,6 +203,16 @@ class LaunchpadChat extends Component
             'buyerEmail.required' => 'That does not look like a valid email. Double-check it for me.',
             'buyerEmail.email' => 'That does not look like a valid email. Double-check it for me.',
         ]);
+
+        $rateKey = 'launchpad-chat:' . (request()->ip() ?: 'unknown');
+        if (RateLimiter::tooManyAttempts($rateKey, config('launchpad.chat_rate_limit', 5))) {
+            $seconds = RateLimiter::availableIn($rateKey);
+            $minutes = max(1, (int) ceil($seconds / 60));
+            throw ValidationException::withMessages([
+                'buyerEmail' => "Too many submissions from this connection. Please try again in about {$minutes} minute" . ($minutes === 1 ? '.' : 's.'),
+            ]);
+        }
+        RateLimiter::hit($rateKey, 3600);
 
         $lead = $this->persistLead();
         $isDuplicate = $this->isDuplicateRecentSubmission();

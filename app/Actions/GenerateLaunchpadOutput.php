@@ -2,11 +2,13 @@
 
 namespace App\Actions;
 
+use App\Mail\AdminLaunchpadAlertMail;
 use App\Models\Generation;
 use App\Models\Lead;
 use App\Models\PromptVersion;
 use App\Services\AnthropicService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use RuntimeException;
 use Throwable;
 
@@ -50,8 +52,30 @@ class GenerateLaunchpadOutput
             'first_generation_id' => $generation->id,
             'retry_generation_id' => $retry->id,
         ]);
+        $this->alertAdmin($lead, 'generation fell back after two failures', [
+            'first_generation_id' => $generation->id,
+            'first_status' => $generation->status,
+            'first_error' => $generation->error,
+            'retry_generation_id' => $retry->id,
+            'retry_status' => $retry->status,
+            'retry_error' => $retry->error,
+            'fallback_generation_id' => $fallback->id,
+        ]);
 
         return $fallback;
+    }
+
+    private function alertAdmin(Lead $lead, string $reason, array $context): void
+    {
+        $to = config('launchpad.admin_alert_email');
+        if (! $to) {
+            return;
+        }
+        try {
+            Mail::to($to)->send(new AdminLaunchpadAlertMail($lead, $reason, $context));
+        } catch (Throwable $e) {
+            Log::error('Failed to send admin launchpad alert', ['error' => $e->getMessage()]);
+        }
     }
 
     private function attempt(Lead $lead, PromptVersion $prompt, string $archetypeLibrary, array $inputPayload, ?Generation $retryOf = null): Generation
