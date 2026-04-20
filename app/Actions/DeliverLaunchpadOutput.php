@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Mail\AdminLaunchpadAlertMail;
 use App\Mail\LaunchpadDeliveryMail;
 use App\Models\Delivery;
 use App\Models\Generation;
@@ -59,8 +60,26 @@ class DeliverLaunchpadOutput
                 'generation_id' => $generation->id,
                 'error' => $e->getMessage(),
             ]);
+            $this->alertAdmin($lead, 'delivery failed', [
+                'delivery_id' => $delivery->id,
+                'generation_id' => $generation->id,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return $delivery;
+    }
+
+    private function alertAdmin(Lead $lead, string $reason, array $context): void
+    {
+        $to = config('launchpad.admin_alert_email');
+        if (! $to) {
+            return;
+        }
+        try {
+            Mail::to($to)->send(new AdminLaunchpadAlertMail($lead, $reason, $context));
+        } catch (Throwable $e) {
+            Log::error('Failed to send admin launchpad alert', ['error' => $e->getMessage()]);
+        }
     }
 }
