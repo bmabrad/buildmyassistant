@@ -76,6 +76,7 @@ class GenerationResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->paginated([25, 50, 100])
+            ->paginationMode(Tables\Enums\PaginationMode::Simple)
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('ID')->sortable(),
                 Tables\Columns\TextColumn::make('lead.buyer_email')->label('Buyer')->searchable(),

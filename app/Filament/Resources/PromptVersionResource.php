@@ -46,6 +46,7 @@ class PromptVersionResource extends Resource
     {
         return $table
             ->defaultSort('created_at', 'desc')
+            ->paginationMode(Tables\Enums\PaginationMode::Simple)
             ->columns([
                 Tables\Columns\TextColumn::make('product')->badge(),
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),

@@ -69,6 +69,7 @@ class LeadResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->paginated([25, 50, 100])
+            ->paginationMode(Tables\Enums\PaginationMode::Simple)
             ->columns([
                 Tables\Columns\TextColumn::make('buyer_name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('buyer_email')->searchable()->copyable(),
