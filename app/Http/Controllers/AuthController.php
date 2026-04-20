@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Mail\MagicLinkMail;
-use App\Models\Assistant;
 use App\Models\MagicLink;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -40,8 +39,6 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
-
-        $this->linkLegacyTasks(Auth::user());
 
         if (Auth::user()->is_admin) {
             return redirect()->intended('/admin');
@@ -106,16 +103,7 @@ class AuthController extends Controller
 
         session()->regenerate();
 
-        $this->linkLegacyTasks($user);
-
         return redirect($user->is_admin ? '/admin' : '/dashboard');
-    }
-
-    private function linkLegacyTasks(User $user): void
-    {
-        Assistant::where('email', $user->email)
-            ->whereNull('user_id')
-            ->update(['user_id' => $user->id]);
     }
 
     public function logout(Request $request)

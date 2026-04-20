@@ -9,7 +9,6 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -25,33 +24,6 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return (bool) $this->is_admin;
-    }
-
-    public function assistants(): HasMany
-    {
-        return $this->hasMany(Assistant::class)->orderByDesc('created_at');
-    }
-
-    protected static function booted(): void
-    {
-        static::deleting(function (User $user) {
-            if ($user->isForceDeleting()) {
-                $user->assistants()->withTrashed()->each(function (Assistant $assistant) {
-                    $assistant->chats()->withTrashed()->forceDelete();
-                    $assistant->forceDelete();
-                });
-            } else {
-                $user->assistants()->each(function (Assistant $assistant) {
-                    $assistant->delete();
-                });
-            }
-        });
-
-        static::restoring(function (User $user) {
-            $user->assistants()->onlyTrashed()->each(function (Assistant $assistant) {
-                $assistant->restore();
-            });
-        });
     }
 
     protected function casts(): array

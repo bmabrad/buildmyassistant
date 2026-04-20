@@ -11,27 +11,11 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->softDeletes();
         });
-
-        Schema::table('launchpad_tasks', function (Blueprint $table) {
-            $table->softDeletes();
-        });
-
-        Schema::table('launchpad_messages', function (Blueprint $table) {
-            $table->softDeletes();
-        });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropSoftDeletes();
-        });
-
-        Schema::table('launchpad_tasks', function (Blueprint $table) {
-            $table->dropSoftDeletes();
-        });
-
-        Schema::table('launchpad_messages', function (Blueprint $table) {
             $table->dropSoftDeletes();
         });
     }

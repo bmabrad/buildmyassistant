@@ -57,10 +57,6 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('email')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('assistants_count')
-                    ->counts('assistants')
-                    ->label('Assistants')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime('M j, Y g:ia')
                     ->sortable(),
@@ -90,14 +86,14 @@ class UserResource extends Resource
                 DeleteAction::make()
                     ->requiresConfirmation()
                     ->modalHeading('Delete user')
-                    ->modalDescription('Are you sure you want to delete this user? Their assistants will also be moved to the bin.')
+                    ->modalDescription('Are you sure you want to delete this user?')
                     ->modalSubmitActionLabel('Yes, delete')
                     ->modalCancelActionLabel('No, keep'),
                 RestoreAction::make(),
                 ForceDeleteAction::make()
                     ->requiresConfirmation()
                     ->modalHeading('Permanently delete')
-                    ->modalDescription('This will permanently delete this user, all their assistants, and all messages. This cannot be undone.')
+                    ->modalDescription('This will permanently delete this user. This cannot be undone.')
                     ->modalSubmitActionLabel('Yes, permanently delete')
                     ->modalCancelActionLabel('No, keep'),
             ]);

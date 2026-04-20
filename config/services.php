@@ -35,17 +35,9 @@ return [
         ],
     ],
 
-    'stripe' => [
-        'launchpad_price_id' => env('STRIPE_LAUNCHPAD_PRICE_ID'),
-    ],
-
     'anthropic' => [
         'api_key' => env('ANTHROPIC_API_KEY'),
         'model' => env('CLAUDE_MODEL', 'claude-sonnet-4-20250514'),
-    ],
-
-    'launchpad' => [
-        'token_limit' => (int) env('LAUNCHPAD_TOKEN_LIMIT', 0),
     ],
 
 ];
