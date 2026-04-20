@@ -5,5 +5,5 @@ return [
     'chat_rate_limit' => (int) env('LAUNCHPAD_CHAT_RATE_LIMIT', 5),
 
     // Where admin alerts for generation fallbacks and terminal delivery failures go.
-    'admin_alert_email' => env('LAUNCHPAD_ADMIN_ALERT_EMAIL', 'hello@buildmyassistant.co'),
+    'admin_alert_email' => env('LAUNCHPAD_ADMIN_ALERT_EMAIL', 'help@buildmyassistant.co'),
 ];
