@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Jobs\GenerateLaunchpadOutputJob;
 use App\Models\ChatSession;
 use App\Models\Lead;
 use Illuminate\Support\Str;
@@ -203,12 +204,17 @@ class LaunchpadChat extends Component
         ]);
 
         $lead = $this->persistLead();
+        $isDuplicate = $this->isDuplicateRecentSubmission();
         $lead->update([
             'buyer_email' => $this->buyerEmail,
-            'status' => $this->isDuplicateRecentSubmission() ? 'duplicate' : 'completed',
+            'status' => $isDuplicate ? 'duplicate' : 'completed',
             'completed_at' => now(),
         ]);
         $this->leadId = $lead->id;
+
+        if (! $isDuplicate) {
+            GenerateLaunchpadOutputJob::dispatch($lead);
+        }
 
         $this->step = 11;
         $this->persistSession();
